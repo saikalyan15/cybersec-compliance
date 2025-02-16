@@ -21,7 +21,7 @@ export default function Home() {
       <div className="mb-8">
         <Image
           src="/Images/cybersec.svg"
-          alt="Next.js Logo"
+          alt="Cybersec Compliance"
           width={250}
           height={150}
           priority
