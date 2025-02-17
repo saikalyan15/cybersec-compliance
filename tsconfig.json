@@ -13,6 +13,14 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lib/*": ["app/lib/*"],
+      "@api/*": ["app/api/*"],
+      "@components/*": ["app/components/*"],
+      "@next-auth/*": ["node_modules/next-auth/*"]
+      // Add other aliases as needed
+    },
     "plugins": [
       {
         "name": "next"
@@ -27,7 +35,8 @@
     "**/*.ts",
     "**/*.tsx",
     "global.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }
