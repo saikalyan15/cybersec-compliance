@@ -1,25 +1,48 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { data: session } = useSession();
   const pathname = usePathname();
 
   const menuItems = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Assessments', path: '/dashboard/assessments' },
-    { name: 'Reports', path: '/dashboard/reports' },
-    { name: 'Admin', path: '/dashboard/admin' },
+    {
+      name: 'Dashboard',
+      path: '/dashboard',
+      roles: ['user', 'admin', 'owner'],
+    },
+    {
+      name: 'Assessments',
+      path: '/dashboard/assessments',
+      roles: ['user', 'admin', 'owner'],
+    },
+    {
+      name: 'Reports',
+      path: '/dashboard/reports',
+      roles: ['user', 'admin', 'owner'],
+    },
+    { name: 'Admin', path: '/dashboard/admin', roles: ['admin'] },
+    {
+      name: 'User Management',
+      path: '/dashboard/admin/users',
+      roles: ['admin'],
+    },
   ];
+
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.roles.includes(session?.user?.role || 'user')
+  );
 
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-800">
         <nav className="mt-5">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <Link
               key={item.path}
               href={item.path}

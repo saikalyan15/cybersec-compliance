@@ -31,12 +31,19 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
+// Remove the pre-save hook temporarily to avoid double hashing
+// userSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) return next();
+//   this.password = await bcrypt.hash(this.password, 12);
+//   next();
+// });
+
+// Add method to verify password
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 export default User;

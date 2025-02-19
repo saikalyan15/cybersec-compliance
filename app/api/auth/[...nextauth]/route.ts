@@ -25,30 +25,27 @@ const authOptions: AuthOptions = {
           throw new Error('No user found with this username');
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isValid = await user.comparePassword(credentials.password);
         if (!isValid) {
           throw new Error('Invalid password');
         }
 
-        // Return user data that will be available in the token
         return {
           id: user._id.toString(),
           username: user.username,
           email: user.email,
           role: user.role,
-          name: `${user.firstName} ${user.lastName}`,
         };
       },
     }),
   ],
 
-  // Callbacks for customizing the JWT and session handling
+  session: {
+    strategy: 'jwt',
+  },
+
   callbacks: {
-    // Modify the JWT token
-    jwt: async ({ token, user }) => {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -57,29 +54,20 @@ const authOptions: AuthOptions = {
       return token;
     },
 
-    // Modify the session
-    session: async ({ session, token }) => {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.username = token.username;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.username = token.username as string;
       }
       return session;
     },
   },
 
-  // Custom pages for authentication
   pages: {
     signIn: '/auth/signin',
   },
-
-  // Configure the session
-  session: {
-    strategy: 'jwt',
-  },
-
-  // Secret for JWT encryption
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
-export const { GET, POST } = NextAuth(authOptions);
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
