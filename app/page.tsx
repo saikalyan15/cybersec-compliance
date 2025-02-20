@@ -6,17 +6,31 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function Home() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const { username, password } = formData;
+
     if (!username || !password) {
-      setError('Username and password are required');
+      setError('All fields are required');
       return;
     }
 
@@ -25,25 +39,36 @@ export default function Home() {
       setError('');
 
       const result = await signIn('credentials', {
-        redirect: false,
         username,
         password,
+        redirect: false,
       });
 
-      if (result?.error) {
-        setError(result.error);
+      if (!result) {
+        throw new Error('Authentication failed');
+      }
+
+      if (result.error) {
+        setError('Invalid username or password');
         return;
       }
 
-      if (result?.ok) {
+      if (result.ok) {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (error) {
+    } catch (err) {
       setError('An error occurred during sign in');
-      console.error('Sign in error:', error);
+      console.error('Sign in error:', err);
     } finally {
       setLoading(false);
+      // Clear password field on error
+      if (error) {
+        setFormData((prev) => ({
+          ...prev,
+          password: '',
+        }));
+      }
     }
   };
 
@@ -57,9 +82,12 @@ export default function Home() {
           <h2 className="text-xl text-gray-600">Sign in to your account</h2>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit} method="POST">
           {error && (
-            <div className="text-red-600 text-center text-sm font-medium">
+            <div
+              className="text-red-600 text-center text-sm font-medium bg-red-50 p-2 rounded border border-red-200"
+              role="alert"
+            >
               {error}
             </div>
           )}
@@ -76,9 +104,11 @@ export default function Home() {
                 id="username"
                 name="username"
                 type="text"
+                autoComplete="username"
+                autoFocus
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Enter your username"
               />
@@ -95,9 +125,10 @@ export default function Home() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Enter your password"
               />

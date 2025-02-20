@@ -12,19 +12,24 @@ interface User {
 }
 
 export default function UserManagement() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (session?.user?.role !== 'admin') {
+    if (status === 'loading') return;
+
+    if (
+      !session ||
+      !['admin', 'owner'].includes(session.user?.role as string)
+    ) {
       router.push('/dashboard');
       return;
     }
 
     fetchUsers();
-  }, [session]);
+  }, [session, status, router]);
 
   const fetchUsers = async () => {
     try {

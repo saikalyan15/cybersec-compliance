@@ -2,48 +2,95 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
+// Clear any existing models
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+// Define the User Schema with all required fields
+const userSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    designation: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin', 'owner'],
+      default: 'user',
+      required: true,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  role: {
-    type: String,
-    enum: ['admin', 'user', 'owner'],
-    default: 'user',
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  {
+    timestamps: true,
+    // This ensures that when converting to JSON/Object, virtuals are included
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// Pre-save middleware to hash password
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch {
+    // Removed unused parameter
+    next(new Error('Failed to hash password'));
+  }
 });
 
-// Remove the pre-save hook temporarily to avoid double hashing
-// userSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) return next();
-//   this.password = await bcrypt.hash(this.password, 12);
-//   next();
-// });
-
-// Add method to verify password
+// Method to compare password
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ) {
-  return bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch {
+    // Removed unused parameter
+    throw new Error('Error comparing passwords');
+  }
 };
 
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+// Ensure all fields are selected by default
+const User = mongoose.model('User', userSchema);
+
+// Add this to help with debugging
+if (process.env.NODE_ENV !== 'production') {
+  User.watch().on('change', (data) => {
+    console.log('User collection change:', data);
+  });
+}
+
 export default User;

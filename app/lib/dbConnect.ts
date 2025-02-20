@@ -1,53 +1,46 @@
 import mongoose from 'mongoose';
 import seedDatabase from './seedDb';
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
+if (!process.env.MONGODB_URI) {
+  throw new Error('Please add your Mongo URI to .env.local');
 }
+
+// Increase max listeners for mongoose connection
+mongoose.connection.setMaxListeners(15);
+
+const MONGODB_URI: string = process.env.MONGODB_URI;
 
 let isConnected = false;
 let isSeeded = false;
-const cached =
-  global.mongoose || (global.mongoose = { conn: null, promise: null });
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 async function dbConnect() {
-  try {
-    if (isConnected && cached.conn) {
-      return cached.conn;
-    }
+  if (cached.conn) {
+    return cached.conn;
+  }
 
-    if (cached.promise) {
-      cached.conn = await cached.promise;
-      return cached.conn;
-    }
-
+  if (!cached.promise) {
     const opts = {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+      bufferCommands: false,
     };
 
-    cached.promise = mongoose
-      .connect(MONGODB_URI, opts)
-      .then(async (mongoose) => {
-        isConnected = true;
-        if (!isSeeded) {
-          await seedDatabase();
-          isSeeded = true;
-        }
-        return mongoose.connection;
-      });
-
-    cached.conn = await cached.promise;
-    return cached.conn;
-  } catch (error) {
-    isConnected = false;
-    isSeeded = false;
-    cached.promise = null;
-    cached.conn = null;
-    throw error;
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      return mongoose;
+    });
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 }
 
 mongoose.connection.on('connected', () => (isConnected = true));
