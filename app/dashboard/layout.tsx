@@ -1,41 +1,42 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Suspense } from 'react';
-import Link from 'next/link';
 import Navbar from '../components/Navbar';
-
-// Loading component
-function LoadingState() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-gray-600">Loading...</div>
-    </div>
-  );
-}
+import Sidebar from '../components/Sidebar';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push('/');
-    },
-  });
+  const { data: session, status } = useSession();
   const router = useRouter();
 
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (!session) {
+      router.push('/');
+    }
+  }, [session, status, router]);
+
   if (status === 'loading') {
-    return <LoadingState />;
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
-      <main className="container mx-auto py-6 px-4">{children}</main>
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6">{children}</main>
+      </div>
     </div>
   );
 }

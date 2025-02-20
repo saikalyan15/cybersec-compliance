@@ -1,18 +1,17 @@
 import mongoose from 'mongoose';
-import seedDatabase from './seedDb';
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-// Increase max listeners for mongoose connection
-mongoose.connection.setMaxListeners(15);
-
 const MONGODB_URI: string = process.env.MONGODB_URI;
 
-let isConnected = false;
-let isSeeded = false;
-let cached = global.mongoose;
+interface Cached {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+let cached: Cached = global.mongoose;
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
@@ -26,11 +25,26 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB connected successfully');
     });
+
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+      cached.conn = null;
+      cached.promise = null;
+    });
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts);
   }
 
   try {
@@ -42,22 +56,5 @@ async function dbConnect() {
 
   return cached.conn;
 }
-
-mongoose.connection.on('connected', () => (isConnected = true));
-mongoose.connection.on('disconnected', () => {
-  isConnected = false;
-  isSeeded = false;
-});
-mongoose.connection.on('error', () => {
-  isConnected = false;
-  isSeeded = false;
-});
-
-process.on('SIGINT', async () => {
-  if (cached.conn) {
-    await mongoose.disconnect();
-  }
-  process.exit(0);
-});
 
 export default dbConnect;

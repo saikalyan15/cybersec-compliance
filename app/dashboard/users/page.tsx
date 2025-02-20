@@ -34,6 +34,11 @@ interface EditUser {
   role: string;
 }
 
+interface ResetPassword {
+  userId: string;
+  newPassword: string;
+}
+
 export default function UsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -52,6 +57,11 @@ export default function UsersPage() {
   });
   const [editingUser, setEditingUser] = useState<EditUser | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState<ResetPassword>({
+    userId: '',
+    newPassword: '',
+  });
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -246,6 +256,35 @@ export default function UsersPage() {
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : 'Failed to delete user'
+      );
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `/api/users/${resetPassword.userId}/reset-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ newPassword: resetPassword.newPassword }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reset password');
+      }
+
+      setShowResetModal(false);
+      setResetPassword({ userId: '', newPassword: '' });
+      setErrorMessage('Password reset successful');
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : 'Failed to reset password'
       );
     }
   };
@@ -516,6 +555,49 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Reset Password Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                Reset Password
+              </h3>
+              <form onSubmit={handleResetPassword} className="mt-4">
+                <input
+                  type="password"
+                  value={resetPassword.newPassword}
+                  onChange={(e) =>
+                    setResetPassword({
+                      ...resetPassword,
+                      newPassword: e.target.value,
+                    })
+                  }
+                  placeholder="New Password"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetModal(false)}
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Reset Password
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow">
         <div className="overflow-x-auto">
           {users.length === 0 ? (
@@ -598,12 +680,26 @@ export default function UsersPage() {
                           Edit
                         </button>
                         {session.user?.id !== user._id && (
-                          <button
-                            onClick={() => handleDelete(user._id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setResetPassword({
+                                  userId: user._id,
+                                  newPassword: '',
+                                });
+                                setShowResetModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-2"
+                            >
+                              Reset Password
+                            </button>
+                            <button
+                              onClick={() => void handleDelete(user._id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
