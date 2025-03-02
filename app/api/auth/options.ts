@@ -14,17 +14,24 @@ export const authOptions: AuthOptions = {
       },
       async authorize(credentials) {
         try {
+          console.log('Starting authorization attempt');
           await dbConnect();
+          console.log('Database connected successfully');
 
-          console.log('Attempting login for username:', credentials?.username);
+          // Log the username (but never log passwords)
+          console.log(
+            `Attempting login for user: ${credentials?.username || 'unknown'}`
+          );
 
           // Find user
           const user = await User.findOne({ username: credentials?.username });
 
           if (!user) {
             console.log('User not found');
-            throw new Error('Invalid username or password');
+            return null;
           }
+
+          console.log('User found, comparing password');
 
           // Check password
           const isValid = await bcrypt.compare(
@@ -32,26 +39,26 @@ export const authOptions: AuthOptions = {
             user.password
           );
 
-          if (!isValid) {
-            console.log('Invalid password');
-            throw new Error('Invalid username or password');
+          console.log(`Password validation result: ${isValid}`);
+
+          if (isValid) {
+            // Return the user without the password
+            return {
+              id: user._id.toString(),
+              username: user.username,
+              email: user.email,
+              role: user.role,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              designation: user.designation,
+            };
           }
 
-          console.log('Login successful for user:', user.username);
-
-          // Return user object
-          return {
-            id: user._id.toString(),
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            designation: user.designation,
-          };
+          console.log('Password validation failed');
+          return null;
         } catch (error) {
           console.error(
-            'Authentication error:',
+            'Authorization error:',
             error instanceof Error ? error.message : 'Unknown error'
           );
           return null;
@@ -93,5 +100,16 @@ export const authOptions: AuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV !== 'production',
+  debug: true,
+  logger: {
+    error(code, metadata) {
+      console.error(`Auth error: ${code}`, metadata);
+    },
+    warn(code) {
+      console.warn(`Auth warning: ${code}`);
+    },
+    debug(code, metadata) {
+      console.log(`Auth debug: ${code}`, metadata);
+    },
+  },
 };
