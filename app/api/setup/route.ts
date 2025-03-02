@@ -1,7 +1,44 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/app/lib/dbConnect';
 import User from '@/app/models/User';
-import mongoose from 'mongoose';
+
+export async function GET() {
+  try {
+    // Ensure database connection is established
+    await dbConnect();
+
+    // Check if connection is ready
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database connection not ready');
+    }
+
+    // Use a type guard to check if db exists before accessing it
+    if (!mongoose.connection.db) {
+      throw new Error('Database not available on connection');
+    }
+
+    const collections = await mongoose.connection.db.collections();
+    console.log(
+      'Available collections:',
+      collections.map((c) => c.collectionName)
+    );
+
+    return NextResponse.json({
+      status: 'Connected to MongoDB',
+      collections: collections.map((c) => c.collectionName),
+    });
+  } catch (error) {
+    console.error('Setup API error:', error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : 'Database connection error',
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST() {
   try {
@@ -9,6 +46,9 @@ export async function POST() {
     await dbConnect();
     console.log('MongoDB Connection State:', mongoose.connection.readyState);
 
+    if (!mongoose.connection.db) {
+      throw new Error('Database not available on connection');
+    }
     // Log the current collections
     const collections = await mongoose.connection.db.collections();
     console.log(
@@ -54,7 +94,11 @@ export async function POST() {
       },
     });
   } catch (error) {
-    console.error('Setup error:', error);
+    console.error(
+      'Error creating admin user:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+    // Don't throw the error, just log it
     return NextResponse.json(
       {
         success: false,

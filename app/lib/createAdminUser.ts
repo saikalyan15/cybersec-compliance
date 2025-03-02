@@ -27,7 +27,10 @@ export async function createAdminUser() {
     console.log('Admin user created successfully:', adminUser.username);
     return adminUser;
   } catch (error) {
-    console.error('Error creating admin user:', error.message);
+    console.error(
+      'Error creating admin user:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     // Don't throw the error, just log it
     return null;
   }

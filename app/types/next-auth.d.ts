@@ -7,6 +7,9 @@ declare module 'next-auth' {
       id: string;
       username: string;
       role: 'admin' | 'user' | 'owner';
+      firstName?: string;
+      lastName?: string;
+      designation?: string;
       name?: string | null;
       email?: string | null;
       image?: string | null;
@@ -17,11 +20,17 @@ declare module 'next-auth' {
     id: string;
     username: string;
     role: 'admin' | 'user' | 'owner';
+    firstName?: string;
+    lastName?: string;
+    designation?: string;
   }
 
   interface JWT {
     id: string;
     username: string;
     role: 'admin' | 'user' | 'owner';
+    firstName?: string;
+    lastName?: string;
+    designation?: string;
   }
 }

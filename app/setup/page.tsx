@@ -10,29 +10,30 @@ export default function SetupPage() {
 
   const handleSetup = async () => {
     try {
-      setStatus('Setting up admin user...');
+      setStatus('Setting up...');
       setError('');
 
-      const response = await fetch('/api/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
+      const response = await fetch('/api/setup');
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create admin user');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Setup failed');
       }
 
-      setStatus('Admin user created successfully!');
+      await response.json();
+
+      setStatus('Setup completed successfully');
       setTimeout(() => {
         router.push('/');
       }, 2000);
     } catch (err) {
-      console.error('Setup error:', err);
-      setError(err.message);
+      console.error(
+        'Setup error:',
+        err instanceof Error ? err.message : String(err)
+      );
+      setError(
+        err instanceof Error ? err.message : 'An unknown error occurred'
+      );
       setStatus('');
     }
   };

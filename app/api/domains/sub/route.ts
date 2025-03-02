@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/options';
 import dbConnect from '@/app/lib/dbConnect';
 import SubDomain from '@/app/models/SubDomain';
 import MainDomain from '@/app/models/MainDomain';
@@ -10,7 +10,8 @@ export async function GET() {
     await dbConnect();
     const subDomains = await SubDomain.find().sort({ subDomainId: 1 });
     return NextResponse.json(subDomains);
-  } catch (error) {
+  } catch (err) {
+    console.error('Fetch sub domains error:', err);
     return NextResponse.json(
       { error: 'Failed to fetch sub domains' },
       { status: 500 }
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
 
     const subDomain = await SubDomain.create(data);
     return NextResponse.json(subDomain);
-  } catch (error) {
+  } catch (err) {
+    console.error('Create sub domain error:', err);
     return NextResponse.json(
       { error: 'Failed to create sub domain' },
       { status: 500 }

@@ -146,6 +146,9 @@ export default function UsersPage() {
       }
 
       const updatedUser = await response.json();
+      if (!updatedUser) {
+        throw new Error('Failed to update user');
+      }
       setUsers(
         users.map((user) =>
           user._id === userId ? { ...user, role: newRole } : user

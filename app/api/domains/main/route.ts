@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/options';
 import dbConnect from '@/app/lib/dbConnect';
 import MainDomain from '@/app/models/MainDomain';
 
@@ -9,7 +9,8 @@ export async function GET() {
     await dbConnect();
     const domains = await MainDomain.find().sort({ domainId: 1 });
     return NextResponse.json(domains);
-  } catch (error) {
+  } catch (err) {
+    console.error('Fetch domains error:', err);
     return NextResponse.json(
       { error: 'Failed to fetch main domains' },
       { status: 500 }
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
 
     const domain = await MainDomain.create(data);
     return NextResponse.json(domain);
-  } catch (error) {
+  } catch (err) {
+    console.error('Create domain error:', err);
     return NextResponse.json(
       { error: 'Failed to create main domain' },
       { status: 500 }

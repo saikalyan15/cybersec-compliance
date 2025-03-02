@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import dbConnect from '@/app/lib/dbConnect';
 import User from '@/app/models/User';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/options';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const session = await getServerSession(authOptions);
 
     if (
@@ -18,7 +20,6 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
     const { newPassword } = await request.json();
 
     if (!newPassword) {
@@ -42,8 +43,8 @@ export async function POST(
     return NextResponse.json({
       message: 'Password reset successfully',
     });
-  } catch (error) {
-    console.error('Reset password error:', error);
+  } catch (err) {
+    console.error('Reset password error:', err);
     return NextResponse.json(
       { error: 'Failed to reset password' },
       { status: 500 }
