@@ -15,6 +15,7 @@ import {
   Key,
   ListChecks,
   CheckSquare,
+  Layers,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/app/lib/utils';
@@ -69,6 +70,12 @@ export function Sidebar() {
       href: '/dashboard/admin/sub-controls',
       label: 'Sub Controls',
       icon: CheckSquare,
+      adminOnly: true,
+    },
+    {
+      href: '/dashboard/admin/levels',
+      label: 'Levels',
+      icon: Layers,
       adminOnly: true,
     },
     {

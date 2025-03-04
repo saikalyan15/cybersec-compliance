@@ -10,7 +10,8 @@
     "seed:main": "ts-node --project scripts/tsconfig.json scripts/seed-domains.ts",
     "seed:sub": "ts-node --project scripts/tsconfig.json scripts/seed-subdomains.ts",
     "seed:controls": "ts-node --project scripts/tsconfig.json scripts/seed-controls.ts",
-    "seed:all": "npm run seed:main && npm run seed:sub && npm run seed:controls"
+    "seed:levels": "ts-node --project scripts/tsconfig.json scripts/seed-levels.ts",
+    "seed:all": "npm run seed:main && npm run seed:sub && npm run seed:controls && npm run seed:levels"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
