@@ -63,6 +63,25 @@ export default function DomainsPage() {
     e.preventDefault();
     try {
       setErrorMessage('');
+
+      // Check for empty fields
+      if (!newDomain.name.trim() || !newDomain.domainId) {
+        throw new Error('Domain ID and Name are required');
+      }
+
+      // Check if domain ID already exists
+      const duplicateDomain = domains.find(
+        (d) => d.domainId === newDomain.domainId
+      );
+      if (duplicateDomain) {
+        throw new Error(`Domain ID ${newDomain.domainId} already exists`);
+      }
+
+      // Validate domain ID is a positive integer
+      if (!Number.isInteger(newDomain.domainId) || newDomain.domainId <= 0) {
+        throw new Error('Domain ID must be a positive integer');
+      }
+
       const response = await fetch('/api/domains/main', {
         method: 'POST',
         headers: {
@@ -89,21 +108,34 @@ export default function DomainsPage() {
     }
   };
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingDomain) return;
-
+  const handleEdit = async (domain: MainDomain) => {
     try {
       setErrorMessage('');
-      const response = await fetch(`/api/domains/main/${editingDomain._id}`, {
+
+      // Check for empty fields
+      if (!domain.name.trim() || !domain.domainId) {
+        throw new Error('Domain ID and Name are required');
+      }
+
+      // Check if the new domain ID already exists (excluding the current domain)
+      const duplicateDomain = domains.find(
+        (d) => d.domainId === domain.domainId && d._id !== domain._id
+      );
+      if (duplicateDomain) {
+        throw new Error(`Domain ID ${domain.domainId} already exists`);
+      }
+
+      // Validate domain ID is a positive integer
+      if (!Number.isInteger(domain.domainId) || domain.domainId <= 0) {
+        throw new Error('Domain ID must be a positive integer');
+      }
+
+      const response = await fetch(`/api/domains/main/${domain._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          domainId: editingDomain.domainId,
-          name: editingDomain.name,
-        }),
+        body: JSON.stringify(domain),
       });
 
       if (!response.ok) {
@@ -262,7 +294,7 @@ export default function DomainsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={handleEdit}
+                      onClick={() => handleEdit(editingDomain)}
                       className="text-green-600 hover:text-green-900 mr-2"
                     >
                       Save

@@ -88,6 +88,50 @@ export default function SubDomainsPage() {
     e.preventDefault();
     try {
       setErrorMessage('');
+
+      // Check for empty fields
+      if (
+        !newSubDomain.subDomainId.trim() ||
+        !newSubDomain.name.trim() ||
+        !newSubDomain.mainDomainId
+      ) {
+        throw new Error('All fields are required');
+      }
+
+      // Check if sub-domain ID already exists
+      const duplicateSubDomain = subDomains.find(
+        (sd) => sd.subDomainId === newSubDomain.subDomainId
+      );
+      if (duplicateSubDomain) {
+        throw new Error(
+          `Sub-Domain ID ${newSubDomain.subDomainId} already exists`
+        );
+      }
+
+      // Validate sub-domain ID format (e.g., "1-1")
+      const subDomainIdPattern = /^\d+-\d+$/;
+      if (!subDomainIdPattern.test(newSubDomain.subDomainId)) {
+        throw new Error('Invalid sub-domain ID format. Should be like "1-1"');
+      }
+
+      // Validate that main domain exists
+      const mainDomain = mainDomains.find(
+        (d) => d.domainId === newSubDomain.mainDomainId
+      );
+      if (!mainDomain) {
+        throw new Error(
+          `Main Domain ID ${newSubDomain.mainDomainId} not found`
+        );
+      }
+
+      // Validate that sub-domain ID starts with main domain ID
+      const [mainDomainPart] = newSubDomain.subDomainId.split('-');
+      if (parseInt(mainDomainPart) !== newSubDomain.mainDomainId) {
+        throw new Error(
+          'Sub-Domain ID must start with the selected Main Domain ID'
+        );
+      }
+
       const response = await fetch('/api/domains/sub', {
         method: 'POST',
         headers: {
@@ -110,7 +154,7 @@ export default function SubDomainsPage() {
       });
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : 'Failed to create sub domain'
+        err instanceof Error ? err.message : 'Failed to create sub-domain'
       );
     }
   };
@@ -121,16 +165,58 @@ export default function SubDomainsPage() {
 
     try {
       setErrorMessage('');
+
+      // Check for empty fields
+      if (
+        !editingSubDomain.subDomainId.trim() ||
+        !editingSubDomain.name.trim() ||
+        !editingSubDomain.mainDomainId
+      ) {
+        throw new Error('All fields are required');
+      }
+
+      // Check if the new sub-domain ID already exists (excluding the current sub-domain)
+      const duplicateSubDomain = subDomains.find(
+        (sd) =>
+          sd.subDomainId === editingSubDomain.subDomainId &&
+          sd._id !== editingSubDomain._id
+      );
+      if (duplicateSubDomain) {
+        throw new Error(
+          `Sub-Domain ID ${editingSubDomain.subDomainId} already exists`
+        );
+      }
+
+      // Validate sub-domain ID format (e.g., "1-1")
+      const subDomainIdPattern = /^\d+-\d+$/;
+      if (!subDomainIdPattern.test(editingSubDomain.subDomainId)) {
+        throw new Error('Invalid sub-domain ID format. Should be like "1-1"');
+      }
+
+      // Validate that main domain exists
+      const mainDomain = mainDomains.find(
+        (d) => d.domainId === editingSubDomain.mainDomainId
+      );
+      if (!mainDomain) {
+        throw new Error(
+          `Main Domain ID ${editingSubDomain.mainDomainId} not found`
+        );
+      }
+
+      // Validate that sub-domain ID starts with main domain ID
+      const [mainDomainPart] = editingSubDomain.subDomainId.split('-');
+      if (parseInt(mainDomainPart) !== editingSubDomain.mainDomainId) {
+        throw new Error(
+          'Sub-Domain ID must start with the selected Main Domain ID'
+        );
+      }
+
       const response = await fetch(`/api/domains/sub/${editingSubDomain._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          mainDomainId: editingSubDomain.mainDomainId,
-          subDomainId: editingSubDomain.subDomainId,
-          name: editingSubDomain.name,
-        }),
+        body: JSON.stringify(editingSubDomain),
       });
 
       if (!response.ok) {
@@ -142,7 +228,7 @@ export default function SubDomainsPage() {
       setEditingSubDomain(null);
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : 'Failed to update sub domain'
+        err instanceof Error ? err.message : 'Failed to update sub-domain'
       );
     }
   };

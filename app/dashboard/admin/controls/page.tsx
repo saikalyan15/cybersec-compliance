@@ -212,6 +212,25 @@ export default function ControlsPage() {
 
   const handleCreate = async () => {
     try {
+      // Check for empty fields
+      if (!newControl.controlId.trim() || !newControl.name.trim()) {
+        throw new Error('Control ID and Name are required');
+      }
+
+      // Check if control ID already exists
+      const duplicateControl = controls.find(
+        (c) => c.controlId === newControl.controlId
+      );
+      if (duplicateControl) {
+        throw new Error(`Control ID ${newControl.controlId} already exists`);
+      }
+
+      // Validate control ID format
+      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
+      if (!controlIdPattern.test(newControl.controlId)) {
+        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
+      }
+
       const res = await fetch('/api/controls/main', {
         method: 'POST',
         headers: {
@@ -268,6 +287,29 @@ export default function ControlsPage() {
     if (!editingControl) return;
 
     try {
+      // Check for empty fields
+      if (!editingControl.controlId.trim() || !editingControl.name.trim()) {
+        throw new Error('Control ID and Name are required');
+      }
+
+      // Check if the new control ID already exists (excluding the current control)
+      const duplicateControl = controls.find(
+        (c) =>
+          c.controlId === editingControl.controlId &&
+          c._id !== editingControl._id
+      );
+      if (duplicateControl) {
+        throw new Error(
+          `Control ID ${editingControl.controlId} already exists`
+        );
+      }
+
+      // Validate control ID format
+      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
+      if (!controlIdPattern.test(editingControl.controlId)) {
+        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
+      }
+
       const res = await fetch(`/api/controls/main/${editingControl._id}`, {
         method: 'PUT',
         headers: {
