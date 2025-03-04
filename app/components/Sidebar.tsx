@@ -13,6 +13,7 @@ import {
   LogOut,
   Shield,
   Key,
+  ListChecks,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/app/lib/utils';
@@ -55,6 +56,12 @@ export function Sidebar() {
       href: '/dashboard/admin/subdomains',
       label: 'Sub Domains',
       icon: Network,
+      adminOnly: true,
+    },
+    {
+      href: '/dashboard/admin/controls',
+      label: 'Controls',
+      icon: ListChecks,
       adminOnly: true,
     },
     {

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import bcrypt from 'bcryptjs';
 import User from '@/app/models/User';
 import dbConnect from '@/app/lib/dbConnect';

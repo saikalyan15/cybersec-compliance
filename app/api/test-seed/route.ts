@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import dbConnect from '@/app/lib/dbConnect';
 import User from '@/app/models/User';
 import seedDatabase from '@/app/lib/seedDb';

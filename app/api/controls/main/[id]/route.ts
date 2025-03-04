@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { getServerSession } from 'next-auth';
 import dbConnect from '@/app/lib/dbConnect';
+import MainControl from '@/app/models/MainControl';
+import MainDomain from '@/app/models/MainDomain';
 import SubDomain from '@/app/models/SubDomain';
 import { authOptions } from '@/app/api/auth/options';
 
@@ -23,16 +25,23 @@ export async function PUT(
     const data = await request.json();
     await dbConnect();
 
-    const subDomain = await SubDomain.findByIdAndUpdate(
-      id,
-      {
-        mainDomainId: data.mainDomainId,
-        subDomainId: data.subDomainId,
-        name: data.name,
-      },
-      { new: true }
-    );
+    // Extract domain ID from control ID (first number)
+    const mainDomainId = parseInt(data.controlId.split('-')[0]);
 
+    // Extract subdomain ID (first two parts)
+    const subDomainId = data.controlId.split('-').slice(0, 2).join('-');
+
+    // Validate mainDomainId exists
+    const mainDomain = await MainDomain.findOne({ domainId: mainDomainId });
+    if (!mainDomain) {
+      return NextResponse.json(
+        { error: 'Main domain not found' },
+        { status: 404 }
+      );
+    }
+
+    // Validate subDomainId exists
+    const subDomain = await SubDomain.findOne({ subDomainId: subDomainId });
     if (!subDomain) {
       return NextResponse.json(
         { error: 'Sub domain not found' },
@@ -40,11 +49,33 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json(subDomain);
+    // Set the domain IDs
+    data.mainDomainId = mainDomainId;
+    data.subDomainId = subDomainId;
+
+    const control = await MainControl.findByIdAndUpdate(
+      id,
+      {
+        controlId: data.controlId,
+        name: data.name,
+        mainDomainId: data.mainDomainId,
+        subDomainId: data.subDomainId,
+      },
+      { new: true }
+    );
+
+    if (!control) {
+      return NextResponse.json(
+        { error: 'Main control not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(control);
   } catch (err) {
-    console.error('Update subdomain error:', err);
+    console.error('Update control error:', err);
     return NextResponse.json(
-      { error: 'Failed to update sub domain' },
+      { error: 'Failed to update main control' },
       { status: 500 }
     );
   }
@@ -67,20 +98,20 @@ export async function DELETE(
     }
 
     await dbConnect();
-    const subDomain = await SubDomain.findByIdAndDelete(id);
+    const control = await MainControl.findByIdAndDelete(id);
 
-    if (!subDomain) {
+    if (!control) {
       return NextResponse.json(
-        { error: 'Sub domain not found' },
+        { error: 'Main control not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ message: 'Sub domain deleted successfully' });
+    return NextResponse.json({ message: 'Main control deleted successfully' });
   } catch (err) {
-    console.error('Delete subdomain error:', err);
+    console.error('Delete control error:', err);
     return NextResponse.json(
-      { error: 'Failed to delete sub domain' },
+      { error: 'Failed to delete main control' },
       { status: 500 }
     );
   }

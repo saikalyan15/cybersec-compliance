@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import dbConnect from '@/app/lib/dbConnect';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/options';

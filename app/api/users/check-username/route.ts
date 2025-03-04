@@ -1,22 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import dbConnect from '@/app/lib/dbConnect';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/options';
+import User from '@/app/models/User';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
-    if (
-      !session ||
-      (session.user.role !== 'admin' && session.user.role !== 'owner')
-    ) {
+    if (!session) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get username from query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const username = searchParams.get('username');
+    await dbConnect();
+
+    // Get username from request body
+    const data = await request.json();
+    const { username } = data;
 
     if (!username) {
       return NextResponse.json(
@@ -25,12 +25,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Connect to database
-    const db = await dbConnect();
-
     // Check if username exists
-    const existingUser = await db.collection('users').findOne({ username });
-
+    const existingUser = await User.findOne({ username });
     return NextResponse.json({ exists: !!existingUser });
   } catch (error) {
     console.error('Error checking username:', error);
