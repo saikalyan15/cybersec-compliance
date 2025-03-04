@@ -1,52 +1,88 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import dbConnect from '@/app/lib/dbConnect';
-import User from '@/app/models/User';
+import { ObjectId } from 'mongodb';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/options';
+import bcrypt from 'bcryptjs';
+import { generateRandomPassword } from '@/app/lib/utils';
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    // Await the params Promise to get the actual params object
+    const params = await context.params;
+    const userId = params.id;
 
+    // Check authentication
     const session = await getServerSession(authOptions);
-
     if (
       !session ||
-      !['admin', 'owner'].includes(session.user?.role as string)
+      (session.user.role !== 'admin' && session.user.role !== 'owner')
     ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { newPassword } = await request.json();
+    console.log('Resetting password for user ID:', userId);
 
-    if (!newPassword) {
+    // Connect to database
+    const db = await dbConnect();
+
+    // Try to convert to ObjectId if it's a valid format
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch (error) {
+      console.error('Invalid ObjectId format:', error);
       return NextResponse.json(
-        { error: 'New password is required' },
+        { message: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
-    await dbConnect();
+    // Check if user exists
+    const user = await db.collection('users').findOne({ _id: userObjectId });
 
-    const user = await User.findById(id);
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    // The password will be hashed by the pre-save middleware
-    user.password = newPassword;
-    await user.save();
+    // Generate a new random password
+    const newPassword = generateRandomPassword();
 
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user with new password and set passwordResetRequired flag
+    const result = await db.collection('users').updateOne(
+      { _id: userObjectId },
+      {
+        $set: {
+          password: hashedPassword,
+          passwordResetRequired: true,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { message: 'Failed to update user password' },
+        { status: 500 }
+      );
+    }
+
+    // Return the new password (in a real app, you might email this instead)
     return NextResponse.json({
       message: 'Password reset successfully',
+      newPassword: newPassword,
     });
-  } catch (err) {
-    console.error('Reset password error:', err);
+  } catch (error) {
+    console.error('Error resetting password:', error);
     return NextResponse.json(
-      { error: 'Failed to reset password' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

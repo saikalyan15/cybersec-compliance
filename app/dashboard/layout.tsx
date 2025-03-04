@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import { Sidebar } from '../components/Sidebar';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -12,14 +12,23 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/');
+      router.push('/login');
     }
-  }, [status, router]);
+
+    if (
+      status === 'authenticated' &&
+      session?.user?.passwordResetRequired &&
+      pathname !== '/dashboard/change-password'
+    ) {
+      router.push('/dashboard/change-password');
+    }
+  }, [status, session, router, pathname]);
 
   if (status === 'loading') {
     return (
@@ -27,6 +36,17 @@ export default function DashboardLayout({
         <LoadingSpinner size="lg" />
       </div>
     );
+  }
+
+  if (status === 'unauthenticated') {
+    return null;
+  }
+
+  if (
+    session?.user?.passwordResetRequired &&
+    pathname !== '/dashboard/change-password'
+  ) {
+    return null;
   }
 
   return (

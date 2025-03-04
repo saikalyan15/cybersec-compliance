@@ -12,6 +12,7 @@ import {
   Users,
   LogOut,
   Shield,
+  Key,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/app/lib/utils';
@@ -67,6 +68,12 @@ export function Sidebar() {
       label: 'Users',
       icon: Users,
       adminOnly: true,
+    },
+    {
+      href: '/dashboard/change-password',
+      label: 'Change Password',
+      icon: Key,
+      adminOnly: false,
     },
   ];
 

@@ -1,124 +1,169 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import dbConnect from '@/app/lib/dbConnect';
-import User from '@/app/models/User';
+import { ObjectId } from 'mongodb';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/options';
 
-export async function PUT(
+// GET a single user by ID
+export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    // Await the params Promise to get the actual params object
+    const params = await context.params;
+    const userId = params.id;
 
+    // Check authentication
     const session = await getServerSession(authOptions);
-
-    if (
-      !session ||
-      !['admin', 'owner'].includes(session.user?.role as string)
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { firstName, lastName, designation, username, email, role } =
-      await request.json();
+    // Connect to database
+    const db = await dbConnect();
 
-    // Validate required fields
-    if (
-      !firstName ||
-      !lastName ||
-      !designation ||
-      !username ||
-      !email ||
-      !role
-    ) {
+    // Try to convert to ObjectId if it's a valid format
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch (error) {
+      console.error('Invalid ObjectId format:', error);
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { message: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
-    await dbConnect();
-
-    // Check if username/email is already taken by another user
-    const existingUser = await User.findOne({
-      $and: [{ _id: { $ne: id } }, { $or: [{ username }, { email }] }],
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Username or email already exists' },
-        { status: 400 }
-      );
-    }
-
-    const user = await User.findByIdAndUpdate(
-      id,
-      {
-        firstName,
-        lastName,
-        designation,
-        username,
-        email,
-        role,
-      },
-      { new: true, select: '-password' }
+    // Check if user exists
+    const user = await db.collection('users').findOne(
+      { _id: userObjectId },
+      { projection: { password: 0 } } // Exclude password field
     );
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Update user error:', error);
+    console.error('Error fetching user:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(
+// PUT (update) a user
+export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    // Await the params Promise to get the actual params object
+    const params = await context.params;
+    const userId = params.id;
 
+    // Check authentication
     const session = await getServerSession(authOptions);
-
     if (
-      !session?.user?.role ||
-      !['admin', 'owner'].includes(session.user.role)
+      !session ||
+      (session.user.role !== 'admin' && session.user.role !== 'owner')
     ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Don't allow admin to delete themselves
-    if (session.user?.id === id) {
+    const data = await request.json();
+
+    // Connect to database
+    const db = await dbConnect();
+
+    // Try to convert to ObjectId if it's a valid format
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch (error) {
+      console.error('Invalid ObjectId format:', error);
       return NextResponse.json(
-        { error: 'Cannot delete your own account' },
+        { message: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
-    await dbConnect();
+    // Update user
+    const result = await db.collection('users').updateOne(
+      { _id: userObjectId },
+      {
+        $set: {
+          ...data,
+          updatedAt: new Date(),
+        },
+      }
+    );
 
-    const deletedUser = await User.findByIdAndDelete(id);
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
 
-    if (!deletedUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE a user
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Await the params Promise to get the actual params object
+    const params = await context.params;
+    const userId = params.id;
+
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (
+      !session ||
+      (session.user.role !== 'admin' && session.user.role !== 'owner')
+    ) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Connect to database
+    const db = await dbConnect();
+
+    // Try to convert to ObjectId if it's a valid format
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch (error) {
+      console.error('Invalid ObjectId format:', error);
+      return NextResponse.json(
+        { message: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Delete user
+    const result = await db
+      .collection('users')
+      .deleteOne({ _id: userObjectId });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error('Error deleting user:', error);
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

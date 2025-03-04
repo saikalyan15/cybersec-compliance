@@ -1,37 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import mongoose from 'mongoose';
 
 export async function GET() {
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      throw new Error('MONGODB_URI is not defined');
+    // Check if we're already connected
+    if (mongoose.connection.readyState === 1) {
+      return NextResponse.json({ status: 'Connected to MongoDB' });
     }
 
-    console.log('Testing connection...');
+    // Try to connect
+    await mongoose.connect(process.env.MONGODB_URI || '');
 
-    // Try to connect with a short timeout
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-    });
-
-    console.log('Connection successful');
-
-    // Clean up
-    await mongoose.disconnect();
-
-    return NextResponse.json({
-      success: true,
-      message: 'Successfully connected to MongoDB',
-    });
+    return NextResponse.json({ status: 'Successfully connected to MongoDB' });
   } catch (error) {
-    console.error('Connection test failed:', error);
+    console.error('MongoDB connection error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { status: 'Failed to connect to MongoDB', error: String(error) },
       { status: 500 }
     );
   }

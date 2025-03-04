@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Bell, User, ChevronDown } from 'lucide-react';
+import { Bell, User, ChevronDown, Key } from 'lucide-react';
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -67,6 +67,16 @@ export default function Navbar() {
                     className="block px-4 py-2 text-sm text-[#1a365d] hover:bg-[#f8f4eb] transition-colors"
                   >
                     Profile Settings
+                  </a>
+
+                  <a
+                    href="/dashboard/change-password"
+                    className="block px-4 py-2 text-sm text-[#1a365d] hover:bg-[#f8f4eb] transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <Key size={14} className="mr-2" />
+                      Change Password
+                    </div>
                   </a>
                 </div>
               )}
