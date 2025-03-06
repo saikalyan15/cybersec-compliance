@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -24,7 +24,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { cn } from '@/app/lib/utils';
 
 interface MainControl {
   _id: string;
@@ -32,6 +35,10 @@ interface MainControl {
   name: string;
   mainDomainId: number;
   subDomainId: string;
+  levelRequirements: {
+    level: number;
+    isRequired: boolean;
+  }[];
 }
 
 interface MainDomain {
@@ -50,6 +57,10 @@ interface SubDomain {
 interface NewMainControl {
   controlId: string;
   name: string;
+  levelRequirements: {
+    level: number;
+    isRequired: boolean;
+  }[];
 }
 
 interface GroupedControls {
@@ -76,6 +87,12 @@ export default function ControlsPage() {
   const [newControl, setNewControl] = useState<NewMainControl>({
     controlId: '',
     name: '',
+    levelRequirements: [
+      { level: 1, isRequired: false },
+      { level: 2, isRequired: false },
+      { level: 3, isRequired: false },
+      { level: 4, isRequired: false },
+    ],
   });
   const [error, setError] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,7 +102,6 @@ export default function ControlsPage() {
     useState<MainControl | null>(null);
   const [expandedDomain, setExpandedDomain] = useState<string>('');
   const [expandedSubDomains, setExpandedSubDomains] = useState<string[]>([]);
-  const recentControlRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -99,7 +115,6 @@ export default function ControlsPage() {
     }
   }, [session, router]);
 
-  // Group controls by domain and subdomain
   const groupControlsByDomain = (
     controls: MainControl[],
     domains: MainDomain[],
@@ -107,7 +122,6 @@ export default function ControlsPage() {
   ): GroupedControls => {
     const grouped: GroupedControls = {};
 
-    // Initialize structure with domains
     domains.forEach((domain) => {
       grouped[domain.domainId] = {
         domain,
@@ -115,7 +129,6 @@ export default function ControlsPage() {
       };
     });
 
-    // Group controls by domain and subdomain
     controls.forEach((control) => {
       const domainId = control.mainDomainId;
       const subDomainId = control.subDomainId;
@@ -140,7 +153,6 @@ export default function ControlsPage() {
     return grouped;
   };
 
-  // Update useEffect to use grouping
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -163,8 +175,6 @@ export default function ControlsPage() {
         setControls(controlsData);
         setDomains(domainsData);
         setSubDomains(subDomainsData);
-
-        // Set grouped controls
         setGroupedControls(
           groupControlsByDomain(controlsData, domainsData, subDomainsData)
         );
@@ -177,7 +187,163 @@ export default function ControlsPage() {
     fetchData();
   }, []);
 
-  // Filter controls based on search query
+  const handleCreate = async () => {
+    try {
+      if (!newControl.controlId.trim() || !newControl.name.trim()) {
+        throw new Error('Control ID and Name are required');
+      }
+
+      const duplicateControl = controls.find(
+        (c) => c.controlId === newControl.controlId
+      );
+      if (duplicateControl) {
+        throw new Error(`Control ID ${newControl.controlId} already exists`);
+      }
+
+      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
+      if (!controlIdPattern.test(newControl.controlId)) {
+        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
+      }
+
+      const res = await fetch('/api/controls/main', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newControl),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to create control');
+      }
+
+      const createdControl = await res.json();
+      const updatedControls = [...controls, createdControl];
+      setControls(updatedControls);
+      setNewControl({
+        controlId: '',
+        name: '',
+        levelRequirements: [
+          { level: 1, isRequired: false },
+          { level: 2, isRequired: false },
+          { level: 3, isRequired: false },
+          { level: 4, isRequired: false },
+        ],
+      });
+      setError('');
+      setRecentlyAddedControl(createdControl);
+      setExpandedDomain(createdControl.mainDomainId.toString());
+      setExpandedSubDomains((prev) => [...prev, createdControl.subDomainId]);
+      setGroupedControls(
+        groupControlsByDomain(updatedControls, domains, subDomains)
+      );
+      setShowAddDialog(false);
+      toast.success('Control created successfully');
+
+      setTimeout(() => {
+        setRecentlyAddedControl(null);
+      }, 5000);
+    } catch (err) {
+      console.error('Create error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create control');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to create control'
+      );
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!editingControl) return;
+
+    try {
+      if (!editingControl.controlId.trim() || !editingControl.name.trim()) {
+        throw new Error('Control ID and Name are required');
+      }
+
+      const duplicateControl = controls.find(
+        (c) =>
+          c.controlId === editingControl.controlId &&
+          c._id !== editingControl._id
+      );
+      if (duplicateControl) {
+        throw new Error(
+          `Control ID ${editingControl.controlId} already exists`
+        );
+      }
+
+      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
+      if (!controlIdPattern.test(editingControl.controlId)) {
+        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
+      }
+
+      const res = await fetch(`/api/controls/main/${editingControl._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingControl),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update control');
+      }
+
+      const updatedControl = await res.json();
+      const updatedControls = controls.map((control) =>
+        control._id === updatedControl._id ? updatedControl : control
+      );
+      setControls(updatedControls);
+      setGroupedControls(
+        groupControlsByDomain(updatedControls, domains, subDomains)
+      );
+      setRecentlyAddedControl(updatedControl);
+      setExpandedDomain(updatedControl.mainDomainId.toString());
+      setExpandedSubDomains((prev) => [...prev, updatedControl.subDomainId]);
+      setEditingControl(null);
+      setError('');
+      toast.success('Control updated successfully');
+
+      setTimeout(() => {
+        setRecentlyAddedControl(null);
+      }, 5000);
+    } catch (err) {
+      console.error('Update error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update control');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to update control'
+      );
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/controls/main/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete control');
+      }
+
+      const updatedControls = controls.filter((control) => control._id !== id);
+      setControls(updatedControls);
+      setGroupedControls(
+        groupControlsByDomain(updatedControls, domains, subDomains)
+      );
+      setError('');
+      toast.success('Control deleted successfully');
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete control');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to delete control'
+      );
+    }
+  };
+
   const filteredGroupedControls = searchQuery
     ? Object.entries(groupedControls).reduce((acc, [domainId, domainData]) => {
         const filteredControls = Object.entries(domainData.controls).reduce(
@@ -210,169 +376,6 @@ export default function ControlsPage() {
       }, {} as GroupedControls)
     : groupedControls;
 
-  const handleCreate = async () => {
-    try {
-      // Check for empty fields
-      if (!newControl.controlId.trim() || !newControl.name.trim()) {
-        throw new Error('Control ID and Name are required');
-      }
-
-      // Check if control ID already exists
-      const duplicateControl = controls.find(
-        (c) => c.controlId === newControl.controlId
-      );
-      if (duplicateControl) {
-        throw new Error(`Control ID ${newControl.controlId} already exists`);
-      }
-
-      // Validate control ID format
-      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
-      if (!controlIdPattern.test(newControl.controlId)) {
-        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
-      }
-
-      const res = await fetch('/api/controls/main', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newControl),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create control');
-      }
-
-      const createdControl = await res.json();
-
-      // Update controls state
-      const updatedControls = [...controls, createdControl];
-      setControls(updatedControls);
-      setNewControl({ controlId: '', name: '' });
-      setError('');
-
-      // Set recently added control and expand its domain/subdomain
-      setRecentlyAddedControl(createdControl);
-      setExpandedDomain(createdControl.mainDomainId.toString());
-      setExpandedSubDomains((prev) => [...prev, createdControl.subDomainId]);
-
-      // Update grouped controls
-      setGroupedControls(
-        groupControlsByDomain(updatedControls, domains, subDomains)
-      );
-
-      // Close the dialog
-      setShowAddDialog(false);
-
-      // Scroll to the new control after a short delay
-      setTimeout(() => {
-        recentControlRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }, 100);
-
-      // Clear the recently added state after animation
-      setTimeout(() => {
-        setRecentlyAddedControl(null);
-      }, 5000);
-    } catch (err) {
-      console.error('Create error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create control');
-    }
-  };
-
-  const handleEdit = async () => {
-    if (!editingControl) return;
-
-    try {
-      // Check for empty fields
-      if (!editingControl.controlId.trim() || !editingControl.name.trim()) {
-        throw new Error('Control ID and Name are required');
-      }
-
-      // Check if the new control ID already exists (excluding the current control)
-      const duplicateControl = controls.find(
-        (c) =>
-          c.controlId === editingControl.controlId &&
-          c._id !== editingControl._id
-      );
-      if (duplicateControl) {
-        throw new Error(
-          `Control ID ${editingControl.controlId} already exists`
-        );
-      }
-
-      // Validate control ID format
-      const controlIdPattern = /^\d+-\d+-[A-Z]-\d+$/;
-      if (!controlIdPattern.test(editingControl.controlId)) {
-        throw new Error('Invalid control ID format. Should be like "2-15-P-2"');
-      }
-
-      const res = await fetch(`/api/controls/main/${editingControl._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editingControl),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to update control');
-      }
-
-      const updatedControl = await res.json();
-
-      // Update controls state
-      const updatedControls = controls.map((control) =>
-        control._id === updatedControl._id ? updatedControl : control
-      );
-      setControls(updatedControls);
-
-      // Update grouped controls
-      setGroupedControls(
-        groupControlsByDomain(updatedControls, domains, subDomains)
-      );
-
-      // Set recently added control to highlight the edited control
-      setRecentlyAddedControl(updatedControl);
-      setExpandedDomain(updatedControl.mainDomainId.toString());
-      setExpandedSubDomains((prev) => [...prev, updatedControl.subDomainId]);
-
-      // Clear the highlight after animation
-      setTimeout(() => {
-        setRecentlyAddedControl(null);
-      }, 5000);
-
-      setEditingControl(null);
-      setError('');
-    } catch (err) {
-      console.error('Update error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update control');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/controls/main/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to delete control');
-      }
-
-      setControls(controls.filter((control) => control._id !== id));
-      setError('');
-    } catch (err) {
-      console.error('Delete error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete control');
-    }
-  };
-
   if (status === 'loading') {
     return <div>Loading...</div>;
   }
@@ -402,17 +405,6 @@ export default function ControlsPage() {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
-        </div>
-      )}
-
-      {recentlyAddedControl && (
-        <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <p className="text-sm font-medium text-blue-800">
-            Successfully added control:
-          </p>
-          <p className="text-blue-700">
-            {recentlyAddedControl.controlId} - {recentlyAddedControl.name}
-          </p>
         </div>
       )}
 
@@ -490,28 +482,23 @@ export default function ControlsPage() {
                             {subDomainData.controls.map((control) => (
                               <Card
                                 key={control._id}
-                                ref={
-                                  recentlyAddedControl?._id === control._id
-                                    ? recentControlRef
-                                    : null
-                                }
-                                className={`${
-                                  recentlyAddedControl?._id === control._id
-                                    ? 'ring-2 ring-blue-500 bg-blue-50'
-                                    : ''
-                                } transition-all duration-500`}
+                                className={cn(
+                                  'transition-all duration-500',
+                                  recentlyAddedControl?._id === control._id &&
+                                    'ring-2 ring-blue-500 bg-blue-50'
+                                )}
                               >
                                 <CardContent className="p-4">
-                                  <div className="flex justify-between items-center">
+                                  <div className="flex justify-between items-start">
                                     <div>
-                                      <p className="font-medium">
+                                      <h3 className="text-lg font-semibold">
                                         {control.controlId}
-                                      </p>
-                                      <p className="text-gray-600">
+                                      </h3>
+                                      <p className="text-muted-foreground">
                                         {control.name}
                                       </p>
                                     </div>
-                                    <div className="space-x-2">
+                                    <div className="flex gap-2">
                                       <Button
                                         variant="outline"
                                         size="sm"
@@ -519,6 +506,7 @@ export default function ControlsPage() {
                                           setEditingControl(control)
                                         }
                                       >
+                                        <Pencil className="h-4 w-4 mr-1" />
                                         Edit
                                       </Button>
                                       <Button
@@ -528,6 +516,7 @@ export default function ControlsPage() {
                                           handleDelete(control._id)
                                         }
                                       >
+                                        <Trash2 className="h-4 w-4 mr-1" />
                                         Delete
                                       </Button>
                                     </div>
@@ -548,32 +537,37 @@ export default function ControlsPage() {
       </Accordion>
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add New Control</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder="Control ID (e.g., 2-15-P-2)"
-              value={newControl.controlId}
-              onChange={(e) =>
-                setNewControl({ ...newControl, controlId: e.target.value })
-              }
-            />
-            <Input
-              placeholder="Control Name"
-              value={newControl.name}
-              onChange={(e) =>
-                setNewControl({ ...newControl, name: e.target.value })
-              }
-            />
-            <Button
-              onClick={() => {
-                handleCreate();
-                setShowAddDialog(false);
-              }}
-            >
-              Add Control
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="controlId">Control ID</Label>
+                <Input
+                  id="controlId"
+                  placeholder="e.g., 2-15-P-2"
+                  value={newControl.controlId}
+                  onChange={(e) =>
+                    setNewControl({ ...newControl, controlId: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="name">Control Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Control Name"
+                  value={newControl.name}
+                  onChange={(e) =>
+                    setNewControl({ ...newControl, name: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <Button onClick={handleCreate} className="w-full">
+              Create Control
             </Button>
           </div>
         </DialogContent>
@@ -583,33 +577,43 @@ export default function ControlsPage() {
         open={!!editingControl}
         onOpenChange={() => setEditingControl(null)}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Control</DialogTitle>
           </DialogHeader>
           {editingControl && (
-            <div className="space-y-4 py-4">
-              <Input
-                placeholder="Control ID"
-                value={editingControl.controlId}
-                onChange={(e) =>
-                  setEditingControl({
-                    ...editingControl,
-                    controlId: e.target.value,
-                  })
-                }
-              />
-              <Input
-                placeholder="Control Name"
-                value={editingControl.name}
-                onChange={(e) =>
-                  setEditingControl({
-                    ...editingControl,
-                    name: e.target.value,
-                  })
-                }
-              />
-              <Button onClick={handleEdit}>Save Changes</Button>
+            <div className="space-y-6 py-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-controlId">Control ID</Label>
+                  <Input
+                    id="edit-controlId"
+                    value={editingControl.controlId}
+                    onChange={(e) =>
+                      setEditingControl({
+                        ...editingControl,
+                        controlId: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-name">Control Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editingControl.name}
+                    onChange={(e) =>
+                      setEditingControl({
+                        ...editingControl,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <Button onClick={handleEdit} className="w-full">
+                Save Changes
+              </Button>
             </div>
           )}
         </DialogContent>

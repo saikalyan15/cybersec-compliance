@@ -15,20 +15,16 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@lib/*": ["app/lib/*"],
+      "@/*": ["./*"],
+      "@lib/*": ["lib/*"],
       "@api/*": ["app/api/*"],
-      "@components/*": ["app/components/*"],
-      "@next-auth/*": ["node_modules/next-auth/*"]
-      // Add other aliases as needed
+      "@components/*": ["components/*"]
     },
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
+    ]
   },
   "include": [
     "next-env.d.ts",

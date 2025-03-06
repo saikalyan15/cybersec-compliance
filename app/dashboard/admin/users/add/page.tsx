@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { LoadingSpinner } from '@/app/components/LoadingSpinner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface UserFormData {
   firstName: string;

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Users, Plus, Edit, Trash, Key } from 'lucide-react';
-import { LoadingSpinner } from '@/app/components/LoadingSpinner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface User {
   _id: string;

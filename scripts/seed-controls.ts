@@ -1,7 +1,19 @@
 import { connect, disconnect } from 'mongoose';
-import Control from '../app/models/Control';
+import MainControl from '../app/models/MainControl';
 
 const controlsToImport = [
+  {
+    controlId: 'AC-1',
+    name: 'Access Control Policy and Procedures',
+    description:
+      'The organization develops, documents, and disseminates to [Assignment: organization-defined personnel or roles].',
+    levelRequirements: [
+      { level: 1, isRequired: true },
+      { level: 2, isRequired: true },
+      { level: 3, isRequired: true },
+      { level: 4, isRequired: true },
+    ],
+  },
   {
     controlId: '1-1-P-1',
     name: 'Cybersecurity Roles and Responsibilities CSP Control',
@@ -348,57 +360,25 @@ async function validateControl(control: (typeof controlsToImport)[0]) {
   }
 }
 
-async function importControls() {
+async function seedControls() {
   try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
-    }
-
-    await connect(process.env.MONGODB_URI);
+    await connect(process.env.MONGODB_URI || '');
     console.log('Connected to MongoDB');
 
-    let successCount = 0;
-    let failureCount = 0;
+    // Clear existing controls
+    await MainControl.deleteMany({});
+    console.log('Cleared existing controls');
 
-    for (const control of controlsToImport) {
-      try {
-        await validateControl(control);
-        await Control.findOneAndUpdate(
-          { controlId: control.controlId },
-          control,
-          { upsert: true, new: true }
-        );
-        console.log(`Successfully processed control: ${control.controlId}`);
-        successCount++;
-      } catch (error) {
-        console.error(
-          `Failed to process control ${control.controlId}:`,
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        failureCount++;
-      }
-    }
+    // Insert new controls
+    await MainControl.insertMany(controlsToImport);
+    console.log('Inserted new controls');
 
-    console.log('\nImport Summary:');
-    console.log(`Total controls processed: ${controlsToImport.length}`);
-    console.log(`Successful: ${successCount}`);
-    console.log(`Failed: ${failureCount}`);
-  } catch (error) {
-    console.error(
-      'Error:',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-    process.exit(1);
-  } finally {
     await disconnect();
     console.log('Disconnected from MongoDB');
+  } catch (error) {
+    console.error('Error seeding controls:', error);
+    process.exit(1);
   }
 }
 
-// Run the import if this script is executed directly
-if (require.main === module) {
-  importControls().catch((error) => {
-    console.error('Failed to import controls:', error);
-    process.exit(1);
-  });
-}
+seedControls();

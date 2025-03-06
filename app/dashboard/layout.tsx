@@ -3,15 +3,15 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import Navbar from '../components/Navbar';
-import { Sidebar } from '../components/Sidebar';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Navbar } from '../../components/Navbar';
+import { Sidebar } from '../../components/Sidebar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
-export default function DashboardLayout({
-  children,
-}: {
+interface DashboardLayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -32,8 +32,11 @@ export default function DashboardLayout({
 
   if (status === 'loading') {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#f8f4eb]">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen bg-[#f8f4eb]">
+        <LoadingSpinner
+          size="lg"
+          containerClassName="flex justify-center items-center min-h-screen"
+        />
       </div>
     );
   }
@@ -50,12 +53,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="min-h-screen bg-[#f8f4eb]">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#f8f4eb]">
+      <main className="pl-64">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4">{children}</main>
-      </div>
+        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+      </main>
     </div>
   );
 }
