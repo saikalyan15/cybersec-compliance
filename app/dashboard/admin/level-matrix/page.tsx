@@ -20,7 +20,7 @@ interface MainControl {
   _id: string;
   controlId: string;
   name: string;
-  levelRequirements: {
+  levelSettings: {
     level: number;
     isRequired: boolean;
   }[];
@@ -65,35 +65,35 @@ export default function LevelMatrixPage() {
     }
   };
 
-  const handleRequirementToggle = async (controlId: string, level: number) => {
+  const handleSettingToggle = async (controlId: string, level: number) => {
     try {
       setIsUpdating(true);
       const control = controls.find((c) => c._id === controlId);
       if (!control) return;
 
-      const updatedRequirements = control.levelRequirements.map((req) =>
-        req.level === level ? { ...req, isRequired: !req.isRequired } : req
+      const updatedSettings = control.levelSettings.map((setting) =>
+        setting.level === level
+          ? { ...setting, isRequired: !setting.isRequired }
+          : setting
       );
 
-      const response = await fetch(`/api/controls/${controlId}/requirements`, {
+      const response = await fetch(`/api/level-settings/${controlId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRequirements),
+        body: JSON.stringify(updatedSettings),
       });
 
-      if (!response.ok) throw new Error('Failed to update requirement');
+      if (!response.ok) throw new Error('Failed to update level setting');
 
       setControls(
         controls.map((c) =>
-          c._id === controlId
-            ? { ...c, levelRequirements: updatedRequirements }
-            : c
+          c._id === controlId ? { ...c, levelSettings: updatedSettings } : c
         )
       );
-      toast.success('Requirement updated successfully');
+      toast.success('Level setting updated successfully');
     } catch (error: unknown) {
-      console.error('Error updating requirement:', error);
-      toast.error('Failed to update requirement');
+      console.error('Error updating level setting:', error);
+      toast.error('Failed to update level setting');
     } finally {
       setIsUpdating(false);
     }
@@ -107,6 +107,9 @@ export default function LevelMatrixPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      <div className="text-sm font-medium text-foreground mb-4">
+        Note: Toggle OFF = Optional, Toggle ON = Mandatory
+      </div>
       <div className="flex items-center space-x-2">
         <Search className="w-5 h-5 text-muted-foreground" />
         <Input
@@ -141,12 +144,12 @@ export default function LevelMatrixPage() {
                     <div className="flex justify-center">
                       <Switch
                         checked={
-                          control.levelRequirements.find(
-                            (req) => req.level === level
+                          control.levelSettings.find(
+                            (setting) => setting.level === level
                           )?.isRequired || false
                         }
                         onCheckedChange={() =>
-                          handleRequirementToggle(control._id, level)
+                          handleSettingToggle(control._id, level)
                         }
                         disabled={isUpdating}
                         aria-label={`Toggle Level ${level} for ${control.controlId}`}

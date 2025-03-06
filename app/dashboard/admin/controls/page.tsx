@@ -35,10 +35,12 @@ interface MainControl {
   name: string;
   mainDomainId: number;
   subDomainId: string;
-  levelRequirements: {
+  levelSettings: {
     level: number;
     isRequired: boolean;
   }[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface MainDomain {
@@ -57,7 +59,9 @@ interface SubDomain {
 interface NewMainControl {
   controlId: string;
   name: string;
-  levelRequirements: {
+  mainDomainId?: number;
+  subDomainId?: string;
+  levelSettings: {
     level: number;
     isRequired: boolean;
   }[];
@@ -87,7 +91,7 @@ export default function ControlsPage() {
   const [newControl, setNewControl] = useState<NewMainControl>({
     controlId: '',
     name: '',
-    levelRequirements: [
+    levelSettings: [
       { level: 1, isRequired: false },
       { level: 2, isRequired: false },
       { level: 3, isRequired: false },
@@ -224,7 +228,7 @@ export default function ControlsPage() {
       setNewControl({
         controlId: '',
         name: '',
-        levelRequirements: [
+        levelSettings: [
           { level: 1, isRequired: false },
           { level: 2, isRequired: false },
           { level: 3, isRequired: false },

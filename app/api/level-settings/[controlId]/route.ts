@@ -25,9 +25,9 @@ export async function GET(request: Request, props: { params: RouteParams }) {
       return NextResponse.json({ error: 'Control not found' }, { status: 404 });
     }
 
-    return NextResponse.json(control.levelRequirements);
+    return NextResponse.json(control.levelSettings);
   } catch (error) {
-    console.error('Error fetching control requirements:', error);
+    console.error('Error fetching level settings:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -44,11 +44,11 @@ export async function PUT(request: Request, props: { params: RouteParams }) {
 
     await connectToMongo();
     const { controlId } = await props.params;
-    const requirements = await request.json();
+    const levelSettings = await request.json();
 
     const control = await MainControl.findByIdAndUpdate(
       controlId,
-      { levelRequirements: requirements },
+      { levelSettings },
       { new: true }
     );
 
@@ -56,9 +56,9 @@ export async function PUT(request: Request, props: { params: RouteParams }) {
       return NextResponse.json({ error: 'Control not found' }, { status: 404 });
     }
 
-    return NextResponse.json(control.levelRequirements);
+    return NextResponse.json(control.levelSettings);
   } catch (error) {
-    console.error('Error updating level requirements:', error);
+    console.error('Error updating level settings:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -15,6 +15,7 @@ import {
   ListChecks,
   CheckSquare,
   Layers,
+  Settings,
 } from 'lucide-react';
 
 interface NavItem {
@@ -77,6 +78,11 @@ export function Sidebar() {
       href: '/dashboard/admin/level-matrix',
       label: 'Level Setting',
       icon: Layers,
+    },
+    {
+      href: '/dashboard/admin/level-sub-matrix',
+      label: 'Level Sub Setting',
+      icon: Settings,
     },
     {
       href: '/dashboard/admin/users',

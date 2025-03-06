@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export interface ILevelRequirement {
+export interface ILevelSetting {
   level: number;
   isRequired: boolean;
 }
@@ -10,12 +10,12 @@ export interface IMainControl {
   name: string;
   mainDomainId: number;
   subDomainId: string;
-  levelRequirements: ILevelRequirement[];
+  levelSettings: ILevelSetting[];
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-const levelRequirementSchema = new mongoose.Schema<ILevelRequirement>(
+const levelSettingSchema = new mongoose.Schema<ILevelSetting>(
   {
     level: {
       type: Number,
@@ -55,20 +55,19 @@ const mainControlSchema = new mongoose.Schema<IMainControl>(
       required: true,
       ref: 'SubDomain',
     },
-    levelRequirements: {
-      type: [levelRequirementSchema],
+    levelSettings: {
+      type: [levelSettingSchema],
       required: true,
       validate: {
-        validator: function (requirements: ILevelRequirement[]) {
+        validator: function (settings: ILevelSetting[]) {
           // Ensure we have exactly 4 levels
-          if (requirements.length !== 4) return false;
+          if (settings.length !== 4) return false;
 
           // Ensure levels 1-4 are present exactly once
-          const levels = requirements.map((req) => req.level).sort();
+          const levels = settings.map((setting) => setting.level).sort();
           return JSON.stringify(levels) === JSON.stringify([1, 2, 3, 4]);
         },
-        message:
-          'Control must have exactly one requirement for each level (1-4)',
+        message: 'Control must have exactly one setting for each level (1-4)',
       },
       default: [
         { level: 1, isRequired: false },
@@ -83,10 +82,10 @@ const mainControlSchema = new mongoose.Schema<IMainControl>(
   }
 );
 
-// Add index for efficient querying by level and requirement
+// Add index for efficient querying by level and setting
 mainControlSchema.index({
-  'levelRequirements.level': 1,
-  'levelRequirements.isRequired': 1,
+  'levelSettings.level': 1,
+  'levelSettings.isRequired': 1,
 });
 
 // Add a pre-save middleware to validate the control ID format
