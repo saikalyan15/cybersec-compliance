@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--inspect' next dev ",
+    "dev": "NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:main": "ts-node --project scripts/tsconfig.json scripts/seed-domains.ts",
-    "seed:sub": "ts-node --project scripts/tsconfig.json scripts/seed-subdomains.ts",
-    "seed:controls": "ts-node --project scripts/tsconfig.json scripts/seed-controls.ts",
-    "seed:levels": "ts-node --project scripts/tsconfig.json scripts/seed-levels.ts",
+    "seed:main": "NODE_ENV=development ts-node --project scripts/tsconfig.json scripts/seed-domains.ts",
+    "seed:sub": "NODE_ENV=development ts-node --project scripts/tsconfig.json scripts/seed-subdomains.ts",
+    "seed:controls": "NODE_ENV=development ts-node --project scripts/tsconfig.json scripts/seed-controls.ts",
+    "seed:levels": "NODE_ENV=development ts-node --project scripts/tsconfig.json scripts/seed-levels.ts",
     "seed:all": "npm run seed:main && npm run seed:sub && npm run seed:controls && npm run seed:levels"
   },
   "dependencies": {
@@ -41,10 +41,12 @@
     "@types/react": "^18.2.22",
     "@types/react-dom": "^18.2.7",
     "autoprefixer": "^10.4.16",
+    "dotenv": "^16.4.7",
     "eslint": "^8.50.0",
     "eslint-config-next": "13.5.2",
     "postcss": "^8.4.30",
     "tailwindcss": "^3.3.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.2.2"
   }
 }
