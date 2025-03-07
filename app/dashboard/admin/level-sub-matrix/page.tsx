@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -13,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SubControl {
@@ -20,6 +21,10 @@ interface SubControl {
   subControlId: string;
   controlId: string;
   name: string;
+  levelSettings: {
+    level: number;
+    isRequired: boolean;
+  }[];
 }
 
 export default function LevelSubMatrixPage() {
@@ -27,6 +32,7 @@ export default function LevelSubMatrixPage() {
   const router = useRouter();
   const [subControls, setSubControls] = useState<SubControl[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -58,6 +64,40 @@ export default function LevelSubMatrixPage() {
     } catch (error) {
       console.error('Error fetching sub-controls:', error);
       toast.error('Failed to fetch sub-controls');
+    }
+  };
+
+  const handleSettingToggle = async (subControlId: string, level: number) => {
+    try {
+      setIsUpdating(true);
+      const subControl = subControls.find((c) => c._id === subControlId);
+      if (!subControl) return;
+
+      const updatedSettings = subControl.levelSettings.map((setting) =>
+        setting.level === level
+          ? { ...setting, isRequired: !setting.isRequired }
+          : setting
+      );
+
+      const response = await fetch(`/api/level-settings/sub/${subControlId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSettings),
+      });
+
+      if (!response.ok) throw new Error('Failed to update level setting');
+
+      setSubControls(
+        subControls.map((c) =>
+          c._id === subControlId ? { ...c, levelSettings: updatedSettings } : c
+        )
+      );
+      toast.success('Level setting updated successfully');
+    } catch (error) {
+      console.error('Error updating level setting:', error);
+      toast.error('Failed to update level setting');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -106,7 +146,18 @@ export default function LevelSubMatrixPage() {
                 {[1, 2, 3, 4].map((level) => (
                   <TableCell key={level} className="text-center">
                     <div className="flex justify-center">
-                      {/* Toggles will be added in next step */}
+                      <Switch
+                        checked={
+                          control.levelSettings?.find(
+                            (setting) => setting.level === level
+                          )?.isRequired || false
+                        }
+                        onCheckedChange={() =>
+                          handleSettingToggle(control._id, level)
+                        }
+                        disabled={isUpdating}
+                        aria-label={`Toggle Level ${level} for ${control.subControlId}`}
+                      />
                     </div>
                   </TableCell>
                 ))}
