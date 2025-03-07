@@ -1,45 +1,34 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
-import dbConnect from '@/app/lib/dbConnect';
-import { ObjectId } from 'mongodb';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/options';
+import { getServerSession } from 'next-auth';
+import mongoose from 'mongoose';
+import connectDB from '@/app/lib/mongodb';
+import User from '@/app/models/User';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // GET a single user by ID
 export async function GET(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Await the params Promise to get the actual params object
-    const params = await context.params;
-    const userId = params.id;
-
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Connect to database
-    const db = await dbConnect();
+    await connectDB();
 
-    // Try to convert to ObjectId if it's a valid format
-    let userObjectId;
-    try {
-      userObjectId = new ObjectId(userId);
-    } catch (error) {
-      console.error('Invalid ObjectId format:', error);
+    if (!mongoose.isValidObjectId(params.id)) {
       return NextResponse.json(
-        { message: 'Invalid user ID format' },
+        { error: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
     // Check if user exists
-    const user = await db.collection('users').findOne(
-      { _id: userObjectId },
-      { projection: { password: 0 } } // Exclude password field
-    );
+    const user = await User.findById(params.id).select('-password');
 
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
@@ -49,7 +38,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Failed to fetch user' },
       { status: 500 }
     );
   }
@@ -58,59 +47,41 @@ export async function GET(
 // PUT (update) a user
 export async function PUT(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Await the params Promise to get the actual params object
-    const params = await context.params;
-    const userId = params.id;
-
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (
-      !session ||
-      (session.user.role !== 'admin' && session.user.role !== 'owner')
-    ) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json();
+    await connectDB();
 
-    // Connect to database
-    const db = await dbConnect();
-
-    // Try to convert to ObjectId if it's a valid format
-    let userObjectId;
-    try {
-      userObjectId = new ObjectId(userId);
-    } catch (error) {
-      console.error('Invalid ObjectId format:', error);
+    if (!mongoose.isValidObjectId(params.id)) {
       return NextResponse.json(
-        { message: 'Invalid user ID format' },
+        { error: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
-    // Update user
-    const result = await db.collection('users').updateOne(
-      { _id: userObjectId },
-      {
-        $set: {
-          ...data,
-          updatedAt: new Date(),
-        },
-      }
-    );
+    const updates = await request.json();
 
-    if (result.matchedCount === 0) {
+    // Check if user exists and update
+    const user = await User.findByIdAndUpdate(
+      params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'User updated successfully' });
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Failed to update user' },
       { status: 500 }
     );
   }
@@ -119,43 +90,27 @@ export async function PUT(
 // DELETE a user
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Await the params Promise to get the actual params object
-    const params = await context.params;
-    const userId = params.id;
-
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (
-      !session ||
-      (session.user.role !== 'admin' && session.user.role !== 'owner')
-    ) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Connect to database
-    const db = await dbConnect();
+    await connectDB();
 
-    // Try to convert to ObjectId if it's a valid format
-    let userObjectId;
-    try {
-      userObjectId = new ObjectId(userId);
-    } catch (error) {
-      console.error('Invalid ObjectId format:', error);
+    if (!mongoose.isValidObjectId(params.id)) {
       return NextResponse.json(
-        { message: 'Invalid user ID format' },
+        { error: 'Invalid user ID format' },
         { status: 400 }
       );
     }
 
-    // Delete user
-    const result = await db
-      .collection('users')
-      .deleteOne({ _id: userObjectId });
+    // Check if user exists and delete
+    const user = await User.findByIdAndDelete(params.id);
 
-    if (result.deletedCount === 0) {
+    if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
@@ -163,7 +118,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting user:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Failed to delete user' },
       { status: 500 }
     );
   }

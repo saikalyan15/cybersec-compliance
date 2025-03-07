@@ -1,74 +1,67 @@
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
-import dbConnect from '@/app/lib/dbConnect';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/options';
-import bcrypt from 'bcryptjs';
-import { ObjectId } from 'mongodb';
+import { getServerSession } from 'next-auth';
+import mongoose from 'mongoose';
+import connectDB from '@/app/lib/mongodb';
+import User from '@/app/models/User';
 
-export async function POST(request: Request): Promise<Response> {
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+interface IUser extends mongoose.Document {
+  comparePassword(candidatePassword: string): Promise<boolean>;
+  password: string;
+}
+
+export async function PUT(request: Request) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const { currentPassword, newPassword } = await request.json();
+    const { userId, currentPassword, newPassword } = await request.json();
 
-    // Validate input
-    if (!currentPassword || !newPassword) {
+    if (!userId || !currentPassword || !newPassword) {
       return NextResponse.json(
-        { message: 'Current password and new password are required' },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Connect to database
-    const db = await dbConnect();
+    await connectDB();
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
 
     // Find user
-    const user = await db.collection('users').findOne({
-      _id: new ObjectId(userId),
-    });
+    const user = (await User.findById(userId)) as IUser;
 
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
-    if (!isPasswordValid) {
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
       return NextResponse.json(
-        { message: 'Current password is incorrect' },
+        { error: 'Current password is incorrect' },
         { status: 400 }
       );
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    // Update password
+    user.password = newPassword;
+    await user.save();
 
-    // Update user password
-    await db.collection('users').updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          password: hashedPassword,
-          passwordResetRequired: false,
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    return NextResponse.json({ message: 'Password changed successfully' });
+    return NextResponse.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error('Error changing password:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: 'Failed to change password' },
       { status: 500 }
     );
   }

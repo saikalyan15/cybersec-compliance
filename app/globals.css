@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
 :root {
   --primary-color: #1a1a1a;
@@ -24,8 +24,6 @@ h5,
 h6 {
   font-family: 'Poppins', sans-serif;
 }
-
-
 
 @layer base {
   :root {
@@ -82,8 +80,6 @@ h6 {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {
