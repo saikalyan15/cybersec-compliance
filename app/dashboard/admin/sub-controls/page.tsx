@@ -528,9 +528,8 @@ export default function SubControlsPage() {
           <h1 className="text-2xl font-bold">Sub-Controls Management</h1>
           <p className="text-gray-600">
             {subControls.length} sub-controls under{' '}
-            {Array.from(new Set(subControls.map((sc) => sc.controlId))).length}{' '}
-            controls across {domains.length} domains and {subDomains.length}{' '}
-            sub-domains
+            {controls.length} controls across{' '}
+            {domains.length} domains and {subDomains.length} sub-domains
           </p>
         </div>
         <Button onClick={() => setShowAddDialog(true)}>
@@ -594,12 +593,13 @@ export default function SubControlsPage() {
                           acc +
                           Object.values(sub.parentControls).reduce(
                             (controlAcc, control) =>
-                              controlAcc + control.subControls.length,
+                              controlAcc +
+                              (control.subControls.length > 0 ? 1 : 0),
                             0
                           ),
                         0
                       )}{' '}
-                      Sub-Controls
+                      Controls with Sub-Controls
                     </p>
                   </div>
                 </div>
@@ -629,7 +629,7 @@ export default function SubControlsPage() {
                           <Badge variant="secondary">
                             {Object.values(subDomainData.parentControls).reduce(
                               (acc, control) =>
-                                acc + control.subControls.length,
+                                acc + (control.subControls.length > 0 ? 1 : 0),
                               0
                             )}
                           </Badge>
