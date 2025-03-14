@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { cn } from '@/app/lib/utils';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { cn } from "@/app/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   ClipboardCheck,
@@ -16,7 +16,7 @@ import {
   CheckSquare,
   Layers,
   Settings,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -28,74 +28,74 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const userRole = session?.user?.role;
-  const isAdmin = userRole === 'admin' || userRole === 'owner';
+  const isAdmin = userRole === "admin" || userRole === "owner";
 
   const generalNavItems: NavItem[] = [
     {
-      href: '/dashboard',
-      label: 'Dashboard',
+      href: "/dashboard",
+      label: "Dashboard",
       icon: LayoutDashboard,
     },
     {
-      href: '/dashboard/assessment',
-      label: 'Assessments',
+      href: "/dashboard/assessment",
+      label: "Assessments",
       icon: ClipboardCheck,
     },
     {
-      href: '/dashboard/reports',
-      label: 'Reports',
+      href: "/dashboard/reports",
+      label: "Reports",
       icon: FileText,
     },
   ];
 
   const adminNavItems: NavItem[] = [
     {
-      href: '/dashboard/admin/domains',
-      label: 'Main Domains',
+      href: "/dashboard/admin/domains",
+      label: "Main Domains",
       icon: Globe,
     },
     {
-      href: '/dashboard/admin/subdomains',
-      label: 'Sub Domains',
+      href: "/dashboard/admin/subdomains",
+      label: "Sub Domains",
       icon: Network,
     },
     {
-      href: '/dashboard/admin/controls',
-      label: 'Main Controls',
+      href: "/dashboard/admin/controls",
+      label: "Main Controls",
       icon: ListChecks,
     },
     {
-      href: '/dashboard/admin/sub-controls',
-      label: 'Sub Controls',
+      href: "/dashboard/admin/sub-controls",
+      label: "Sub Controls",
       icon: CheckSquare,
     },
     {
-      href: '/dashboard/admin/levels',
-      label: 'Levels',
+      href: "/dashboard/admin/levels",
+      label: "Levels",
       icon: Layers,
     },
     {
-      href: '/dashboard/admin/level-matrix',
-      label: 'Level Setting',
+      href: "/dashboard/admin/level-matrix",
+      label: "Level Setting",
       icon: Layers,
     },
     {
-      href: '/dashboard/admin/level-sub-matrix',
-      label: 'Level Sub Setting',
+      href: "/dashboard/admin/level-sub-matrix",
+      label: "Level Sub Setting",
       icon: Settings,
     },
     {
-      href: '/dashboard/admin/users',
-      label: 'Users',
+      href: "/dashboard/admin/users",
+      label: "Users",
       icon: Users,
     },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' && pathname === '/dashboard') {
+    if (path === "/dashboard" && pathname === "/dashboard") {
       return true;
     }
-    return pathname?.startsWith(path) && path !== '/dashboard';
+    return pathname?.startsWith(path) && path !== "/dashboard";
   };
 
   const NavLink = ({ item }: { item: NavItem }) => {
@@ -106,10 +106,10 @@ export function Sidebar() {
       <Link
         href={item.href}
         className={cn(
-          'flex items-center space-x-3 px-3 py-2 rounded-md transition-colors',
+          "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
           active
-            ? 'bg-[#e6c78b] text-[#0f2744] font-medium'
-            : 'text-gray-300 hover:bg-[#1a365d]'
+            ? "bg-[#e6c78b] text-[#0f2744] font-medium"
+            : "text-gray-300 hover:bg-[#1a365d]"
         )}
       >
         <Icon size={20} />

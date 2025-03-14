@@ -82,10 +82,10 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] rtl:font-[Tajawal]">
+    <main className="min-h-screen flex flex-col md:flex-row bg-[#f8f4eb]">
       {/* Left side - Branding */}
-      <div className="hidden md:flex md:w-1/2 bg-[#1a365d] text-white p-8 flex-col justify-between relative overflow-hidden">
-        {/* Background pattern */}
+      <div className="hidden md:flex md:w-1/2 bg-[#0f2744] text-white flex-col justify-center relative overflow-hidden">
+        {/* Arabic pattern background */}
         <div className="absolute inset-0 opacity-10">
           <svg
             className="w-full h-full"
@@ -93,121 +93,111 @@ export default function Home() {
             preserveAspectRatio="none"
           >
             <pattern
-              id="grid"
-              width="10"
-              height="10"
+              id="arabesque"
+              width="20"
+              height="20"
               patternUnits="userSpaceOnUse"
             >
               <path
-                d="M 10 0 L 0 0 0 10"
+                d="M20 0C20 11.0457 11.0457 20 0 20C11.0457 20 20 31.0457 20 42C20 31.0457 31.0457 20 42 20C31.0457 20 20 11.0457 20 0Z"
                 fill="none"
-                stroke="white"
+                stroke="currentColor"
                 strokeWidth="0.5"
               />
             </pattern>
-            <rect width="100" height="100" fill="url(#grid)" />
+            <rect width="100" height="100" fill="url(#arabesque)" />
           </svg>
         </div>
 
-        <div className="relative z-10">
-          {/* <Image
-            src="/logo-white.png"
-            alt="Company Logo"
-            width={180}
-            height={60}
-            className="mb-10"
-          /> */}
-
-          <h1 className="text-3xl font-bold mb-4">
-            Welcome to Cybersec Compliance
-          </h1>
-          <p className="text-lg opacity-90 mb-8 max-w-md">
-            Your comprehensive solution for business management and analytics.
-          </p>
-
-          {/* Feature highlights */}
-          <div className="space-y-4 mb-10">
-            <div className="flex items-start">
-              <CheckCircle2 className="h-6 w-6 text-[#90cdf4] mr-3 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-lg">Secure Management</h3>
-                <p className="opacity-80 text-sm">
-                  Enterprise-grade security with ISO 27001 compliance
+        <div className="relative z-10 flex flex-col h-full justify-between py-12 px-12">
+          <div>
+            <div className="flex items-center mb-12">
+              <div className="bg-[#e6c78b] p-4 rounded-xl shadow-md">
+                <ShieldCheck size={40} className="text-[#0f2744]" />
+              </div>
+              <div className="ml-6">
+                <h1 className="text-4xl font-bold text-[#e6c78b]">
+                  Cybersec Compliance
+                </h1>
+                <p className="text-lg text-gray-300 mt-2">
+                  Enterprise Security Management
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start">
-              <CheckCircle2 className="h-6 w-6 text-[#90cdf4] mr-3 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-lg">Real-time Analytics</h3>
-                <p className="opacity-80 text-sm">
-                  Comprehensive dashboards with actionable insights
-                </p>
+            <div className="space-y-8 mb-12">
+              <div className="flex items-start bg-[#1a365d] p-6 rounded-xl">
+                <CheckCircle2 className="h-8 w-8 text-[#e6c78b] mr-4 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-xl text-[#e6c78b]">
+                    Enterprise Security
+                  </h3>
+                  <p className="text-gray-300 mt-2">
+                    Advanced security framework aligned with ISO 27001 and
+                    regional compliance standards
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-start">
-              <CheckCircle2 className="h-6 w-6 text-[#90cdf4] mr-3 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-lg">Middle East Optimized</h3>
-                <p className="opacity-80 text-sm">
-                  Tailored for regional business requirements
-                </p>
+              <div className="flex items-start bg-[#1a365d] p-6 rounded-xl">
+                <CheckCircle2 className="h-8 w-8 text-[#e6c78b] mr-4 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-xl text-[#e6c78b]">
+                    Intelligent Analytics
+                  </h3>
+                  <p className="text-gray-300 mt-2">
+                    Real-time monitoring and comprehensive security assessment
+                    dashboards
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start bg-[#1a365d] p-6 rounded-xl">
+                <CheckCircle2 className="h-8 w-8 text-[#e6c78b] mr-4 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-xl text-[#e6c78b]">
+                    Regional Compliance
+                  </h3>
+                  <p className="text-gray-300 mt-2">
+                    Specialized framework for Middle East regulatory
+                    requirements
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Testimonial */}
-          {/* <div className="bg-[#2d4a77] p-5 rounded-lg mt-6 max-w-md">
-            <p className="italic text-sm opacity-90 mb-3">
-              "This platform has transformed how we manage our operations,
-              providing us with the insights and tools we need to grow our
-              business."
-            </p>
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-[#90cdf4] rounded-full flex items-center justify-center text-[#1a365d] font-bold mr-2">
-                AM
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Ahmed Mohammed</p>
-                <p className="text-xs opacity-75">CEO, Gulf Enterprises</p>
-              </div>
-            </div>
-          </div> */}
-        </div>
-
-        {/* Decorative image */}
-        {/* <div className="absolute bottom-0 right-0 w-64 h-64 opacity-20">
-          <Image
-            src="/dashboard-illustration.png"
-            alt="Dashboard Illustration"
-            width={256}
-            height={256}
-            className="object-contain"
-          />
-        </div> */}
-
-        <div className="relative z-10 text-sm opacity-70">
-          © {new Date().getFullYear()} Transcend Shuraa. All rights reserved.
+          <div className="text-sm text-gray-300">
+            © {new Date().getFullYear()} Transcend Shuraa. All rights reserved.
+          </div>
         </div>
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-[#f8f4eb]">
         <div className="w-full max-w-md">
-          <div className="md:hidden mb-8 flex justify-center">
-            <Image src="/logo.png" alt="Company Logo" width={150} height={50} />
+          <div className="md:hidden mb-8 flex items-center justify-center">
+            <div className="bg-[#e6c78b] p-4 rounded-xl shadow-md">
+              <ShieldCheck size={40} className="text-[#0f2744]" />
+            </div>
+            <div className="ml-4">
+              <h1 className="text-2xl font-bold text-[#0f2744]">
+                Cybersec Compliance
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Enterprise Security Management
+              </p>
+            </div>
           </div>
 
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-[#1a365d] mb-6 text-center">
-              Sign In
+          <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <h2 className="text-2xl font-bold text-[#0f2744] mb-8 text-center">
+              Welcome Back
             </h2>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm flex items-center">
-                <AlertCircle className="h-4 w-4 mr-2" />
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center">
+                <AlertCircle className="h-5 w-5 mr-2" />
                 {error}
               </div>
             )}
@@ -216,23 +206,24 @@ export default function Home() {
               <div>
                 <label
                   htmlFor="username"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-[#0f2744] mb-2"
                 >
                   Username
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-[#0f2744]" />
                   </div>
                   <input
                     id="username"
                     name="username"
                     type="text"
                     autoComplete="username"
+                    autoFocus
                     required
                     value={formData.username}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1a365d] focus:border-[#1a365d]"
+                    className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e6c78b] focus:border-[#e6c78b] bg-gray-50"
                     placeholder="Enter your username"
                   />
                 </div>
@@ -241,13 +232,13 @@ export default function Home() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-[#0f2744] mb-2"
                 >
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-[#0f2744]" />
                   </div>
                   <input
                     id="password"
@@ -257,7 +248,7 @@ export default function Home() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1a365d] focus:border-[#1a365d]"
+                    className="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e6c78b] focus:border-[#e6c78b] bg-gray-50"
                     placeholder="Enter your password"
                   />
                 </div>
@@ -267,55 +258,38 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1a365d] hover:bg-[#2d4a77] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a365d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-[#0f2744] bg-[#e6c78b] hover:bg-[#d4b77a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e6c78b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? <LoadingSpinner size="sm" /> : "Sign in"}
                 </button>
               </div>
             </form>
 
-            {/* Cybersecurity compliance information */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center text-[#1a365d]">
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-center text-[#0f2744]">
                 <ShieldCheck className="h-5 w-5 mr-2" />
-                <h3 className="text-sm font-medium">Secure Access Portal</h3>
+                <h3 className="text-sm font-medium">
+                  Secure Enterprise Access
+                </h3>
               </div>
-              {/* <p className="mt-2 text-xs text-gray-600">
-                This system is for authorized users only and complies with ISO
-                27001 and GDPR standards. All activities are monitored and
-                logged for security purposes.
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500">
-                <div className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  <span>End-to-end encryption</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  <span>Multi-factor ready</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  <span>Brute force protection</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                  <span>Session timeout</span>
-                </div>
-              </div> */}
             </div>
           </div>
 
-          <div className="mt-4 text-center text-xs text-gray-500">
+          <div className="mt-6 text-center text-sm text-gray-600">
             By accessing this system, you agree to our{" "}
-            <Link href="/terms" className="text-[#1a365d] hover:underline">
+            <Link
+              href="/terms"
+              className="text-[#0f2744] hover:text-[#1a365d] font-medium"
+            >
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-[#1a365d] hover:underline">
+            <Link
+              href="/privacy"
+              className="text-[#0f2744] hover:text-[#1a365d] font-medium"
+            >
               Privacy Policy
             </Link>
-            .
           </div>
         </div>
       </div>
