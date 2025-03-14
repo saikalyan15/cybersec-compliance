@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Lock } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Lock } from "lucide-react";
 
 export default function ChangePasswordPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [isResetRequired, setIsResetRequired] = useState(false);
 
   // Check if password reset is required
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.passwordResetRequired) {
+    if (status === "authenticated" && session?.user?.passwordResetRequired) {
       setIsResetRequired(true);
     }
   }, [session, status]);
@@ -51,18 +51,20 @@ export default function ChangePasswordPage() {
     e.preventDefault();
 
     // Reset states
-    setError('');
+    setError("");
     setSuccess(false);
+
+    console.log("Current session before password change:", session);
 
     // Validate passwords
     if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
+      setError("New passwords do not match");
       return;
     }
 
     if (passwordStrength < 3) {
       setError(
-        'Password is not strong enough. Include uppercase, lowercase, numbers, and special characters.'
+        "Password is not strong enough. Include uppercase, lowercase, numbers, and special characters."
       );
       return;
     }
@@ -70,12 +72,15 @@ export default function ChangePasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/users/change-password', {
-        method: 'POST',
+      console.log("Attempting to change password for user:", session?.user?.id);
+
+      const response = await fetch("/api/users/change-password", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          userId: session?.user?.id,
           currentPassword,
           newPassword,
         }),
@@ -84,27 +89,35 @@ export default function ChangePasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password');
+        console.error("Password change failed:", data);
+        throw new Error(data.error || "Failed to change password");
       }
+
+      console.log("Password change successful:", data);
 
       // Success
       setSuccess(true);
 
-      // Update session to remove passwordResetRequired flag
-      await update();
+      // Update session with new passwordResetRequired status
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          passwordResetRequired: false,
+        },
+      });
 
-      // Redirect after a delay
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error("Error during password change:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="p-8 flex justify-center">
         <LoadingSpinner size="lg" />
@@ -112,8 +125,8 @@ export default function ChangePasswordPage() {
     );
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/login');
+  if (status === "unauthenticated") {
+    router.push("/login");
     return null;
   }
 
@@ -127,7 +140,7 @@ export default function ChangePasswordPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-center text-[#1a365d] mb-6">
-          {isResetRequired ? 'Set New Password' : 'Change Password'}
+          {isResetRequired ? "Set New Password" : "Change Password"}
         </h1>
 
         {isResetRequired && (
@@ -168,8 +181,8 @@ export default function ChangePasswordPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a365d]"
               placeholder={
                 isResetRequired
-                  ? 'Enter your temporary password'
-                  : 'Enter your current password'
+                  ? "Enter your temporary password"
+                  : "Enter your current password"
               }
             />
           </div>
@@ -198,20 +211,20 @@ export default function ChangePasswordPage() {
                   <div
                     className={`transition-all duration-300 ${
                       passwordStrength <= 1
-                        ? 'bg-red-500'
+                        ? "bg-red-500"
                         : passwordStrength <= 3
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
                     }`}
                     style={{ width: `${(passwordStrength / 5) * 100}%` }}
                   />
                 </div>
                 <p className="text-xs mt-1 text-gray-500">
                   {passwordStrength <= 1
-                    ? 'Weak'
+                    ? "Weak"
                     : passwordStrength <= 3
-                    ? 'Moderate'
-                    : 'Strong'}{' '}
+                    ? "Moderate"
+                    : "Strong"}{" "}
                   password
                 </p>
               </div>
@@ -241,7 +254,7 @@ export default function ChangePasswordPage() {
             disabled={loading}
             className="w-full px-4 py-2 bg-[#1a365d] text-white rounded-md hover:bg-[#2d4a77] transition-colors disabled:opacity-50"
           >
-            {loading ? 'Changing Password...' : 'Change Password'}
+            {loading ? "Changing Password..." : "Change Password"}
           </button>
         </form>
       </div>

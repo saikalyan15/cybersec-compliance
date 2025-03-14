@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import { Bell, User, ChevronDown, Key, LogOut } from 'lucide-react';
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { Bell, User, ChevronDown, Key, LogOut } from "lucide-react";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -40,7 +40,7 @@ export function Navbar() {
                 <span className="hidden md:inline-block font-medium">
                   {session?.user?.firstName ||
                     session?.user?.username ||
-                    'User'}
+                    "User"}
                 </span>
                 <ChevronDown size={16} className="text-[#e6c78b]" />
               </button>
@@ -61,8 +61,8 @@ export function Navbar() {
                       <span className="text-xs text-gray-600 capitalize">
                         Role: {session?.user?.role}
                       </span>
-                      {(session?.user?.role === 'admin' ||
-                        session?.user?.role === 'owner') && (
+                      {(session?.user?.role === "admin" ||
+                        session?.user?.role === "owner") && (
                         <span className="bg-[#e6c78b] text-[#1a365d] text-xs px-1.5 py-0.5 rounded">
                           Admin
                         </span>
@@ -89,7 +89,7 @@ export function Navbar() {
                     </a>
 
                     <button
-                      onClick={() => signOut({ callbackUrl: '/' })}
+                      onClick={() => signOut({ callbackUrl: "/" })}
                       className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center border-t border-gray-100"
                     >
                       <LogOut size={14} className="mr-2" />

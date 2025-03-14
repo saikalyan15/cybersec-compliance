@@ -1,36 +1,40 @@
 // types/next-auth.d.ts
-import 'next-auth';
+import "next-auth";
+import { DefaultSession } from "next-auth";
 
-declare module 'next-auth' {
+declare module "next-auth" {
   interface Session {
-    user: DefaultSession['user'] & {
+    user: {
       id: string;
       username: string;
-      role: 'admin' | 'user' | 'owner';
-      firstName?: string;
-      lastName?: string;
-      designation?: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    };
+      email: string;
+      role: "user" | "admin" | "owner";
+      firstName: string;
+      lastName: string;
+      designation: string;
+      passwordResetRequired: boolean;
+    } & DefaultSession["user"];
   }
 
-  interface User extends DefaultUser {
+  interface User {
     id: string;
     username: string;
-    role: 'admin' | 'user' | 'owner';
-    firstName?: string;
-    lastName?: string;
-    designation?: string;
+    email: string;
+    role: "user" | "admin" | "owner";
+    firstName: string;
+    lastName: string;
+    designation: string;
+    passwordResetRequired: boolean;
   }
 
   interface JWT {
     id: string;
     username: string;
-    role: 'admin' | 'user' | 'owner';
-    firstName?: string;
-    lastName?: string;
-    designation?: string;
+    email: string;
+    role: "user" | "admin" | "owner";
+    firstName: string;
+    lastName: string;
+    designation: string;
+    passwordResetRequired: boolean;
   }
 }

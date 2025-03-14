@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Lock,
   User,
   AlertCircle,
   ShieldCheck,
   CheckCircle2,
-} from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -30,7 +30,7 @@ export default function Home() {
       [name]: value,
     }));
     // Clear error when user starts typing
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,43 +39,43 @@ export default function Home() {
     const { username, password } = formData;
 
     if (!username || !password) {
-      setError('All fields are required');
+      setError("All fields are required");
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         username,
         password,
         redirect: false,
       });
 
       if (!result) {
-        throw new Error('Authentication failed');
+        throw new Error("Authentication failed");
       }
 
       if (result.error) {
-        setError('Invalid username or password');
+        setError("Invalid username or password");
         return;
       }
 
       if (result.ok) {
-        router.push('/dashboard');
+        router.push("/dashboard");
         router.refresh();
       }
     } catch (err) {
-      setError('An error occurred during sign in');
-      console.error('Sign in error:', err);
+      setError("An error occurred during sign in");
+      console.error("Sign in error:", err);
     } finally {
       setLoading(false);
       // Clear password field on error
       if (error) {
         setFormData((prev) => ({
           ...prev,
-          password: '',
+          password: "",
         }));
       }
     }
@@ -269,7 +269,7 @@ export default function Home() {
                   disabled={loading}
                   className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1a365d] hover:bg-[#2d4a77] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1a365d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? <LoadingSpinner size="sm" /> : 'Sign in'}
+                  {loading ? <LoadingSpinner size="sm" /> : "Sign in"}
                 </button>
               </div>
             </form>
@@ -307,11 +307,11 @@ export default function Home() {
           </div>
 
           <div className="mt-4 text-center text-xs text-gray-500">
-            By accessing this system, you agree to our{' '}
+            By accessing this system, you agree to our{" "}
             <Link href="/terms" className="text-[#1a365d] hover:underline">
               Terms of Service
-            </Link>{' '}
-            and{' '}
+            </Link>{" "}
+            and{" "}
             <Link href="/privacy" className="text-[#1a365d] hover:underline">
               Privacy Policy
             </Link>

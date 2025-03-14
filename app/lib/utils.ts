@@ -1,5 +1,5 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 /**
  * Combines class names with Tailwind CSS classes
@@ -17,14 +17,14 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function generateRandomPassword(length = 10): string {
   const charset =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-  let password = '';
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+  let password = "";
 
   // Ensure at least one character from each category
-  password += getRandomChar('ABCDEFGHIJKLMNOPQRSTUVWXYZ'); // Uppercase
-  password += getRandomChar('abcdefghijklmnopqrstuvwxyz'); // Lowercase
-  password += getRandomChar('0123456789'); // Number
-  password += getRandomChar('!@#$%^&*()'); // Special character
+  password += getRandomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ"); // Uppercase
+  password += getRandomChar("abcdefghijklmnopqrstuvwxyz"); // Lowercase
+  password += getRandomChar("0123456789"); // Number
+  password += getRandomChar("!@#$%^&*()"); // Special character
 
   // Fill the rest of the password
   for (let i = password.length; i < length; i++) {
@@ -52,10 +52,10 @@ function getRandomChar(charset: string): string {
  * @returns Shuffled string
  */
 function shuffleString(str: string): string {
-  const array = str.split('');
+  const array = str.split("");
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
-  return array.join('');
+  return array.join("");
 }

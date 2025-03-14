@@ -1,73 +1,57 @@
-import bcrypt from 'bcryptjs';
-import { AuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import dbConnect from '@/app/lib/dbConnect';
-import User from '@/app/models/User';
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import dbConnect from "@/app/lib/dbConnect";
+import User from "@/app/models/User";
+import bcrypt from "bcryptjs";
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         try {
-          console.log('Starting authorization attempt');
+          if (!credentials?.username || !credentials?.password) {
+            throw new Error("Missing username or password");
+          }
+
           await dbConnect();
-          console.log('Database connected successfully');
-
-          // Log the username (but never log passwords)
-          console.log(
-            `Attempting login for user: ${credentials?.username || 'unknown'}`
-          );
-
-          // Find user
-          const user = await User.findOne({ username: credentials?.username });
+          const user = await User.findOne({ username: credentials.username });
 
           if (!user) {
-            console.log('User not found');
-            return null;
+            throw new Error("Invalid username or password");
           }
 
-          console.log('User found, comparing password');
-
-          // Check password
           const isValid = await bcrypt.compare(
-            credentials?.password || '',
+            credentials.password,
             user.password
           );
-
-          console.log(`Password validation result: ${isValid}`);
-
-          if (isValid) {
-            // Return the user without the password
-            return {
-              id: user._id.toString(),
-              username: user.username,
-              email: user.email,
-              role: user.role,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              designation: user.designation,
-            };
+          if (!isValid) {
+            throw new Error("Invalid username or password");
           }
 
-          console.log('Password validation failed');
-          return null;
-        } catch (error) {
-          console.error(
-            'Authorization error:',
-            error instanceof Error ? error.message : 'Unknown error'
-          );
+          return {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            designation: user.designation,
+            passwordResetRequired: user.passwordResetRequired,
+          };
+        } catch (error: any) {
+          console.error("Auth error:", error);
           return null;
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
@@ -76,40 +60,53 @@ export const authOptions: AuthOptions = {
         token.firstName = user.firstName;
         token.lastName = user.lastName;
         token.designation = user.designation;
+        token.passwordResetRequired = user.passwordResetRequired;
       }
+
+      // Handle updates to the session
+      if (
+        trigger === "update" &&
+        session?.passwordResetRequired !== undefined
+      ) {
+        token.passwordResetRequired = session.passwordResetRequired;
+      }
+
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (token) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.email = token.email as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as "user" | "admin" | "owner";
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
         session.user.designation = token.designation as string;
+        session.user.passwordResetRequired =
+          token.passwordResetRequired as boolean;
       }
       return session;
     },
   },
+  events: {
+    async signIn({ user }) {
+      // Update user's last login time if needed
+      try {
+        await dbConnect();
+        await User.findByIdAndUpdate(user.id, {
+          lastLogin: new Date(),
+        });
+      } catch (error) {
+        console.error("Error updating last login:", error);
+      }
+    },
+  },
   pages: {
-    signIn: '/',
+    signIn: "/login",
   },
   session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
-  logger: {
-    error(code, metadata) {
-      console.error(`Auth error: ${code}`, metadata);
-    },
-    warn(code) {
-      console.warn(`Auth warning: ${code}`);
-    },
-    debug(code, metadata) {
-      console.log(`Auth debug: ${code}`, metadata);
-    },
-  },
 };
